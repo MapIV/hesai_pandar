@@ -53,6 +53,10 @@ PandarDriver::PandarDriver(ros::NodeHandle node, ros::NodeHandle private_nh)
     azimuth_index_ = 12;  // 12 + 130 * [0-7]
     is_valid_packet_ = [](size_t packet_size) { return (packet_size == 820); };
   }
+  else if (model_ == "PandarQT128") {
+    azimuth_index_ = 12;  // 12 + 512 * [0-1]
+    is_valid_packet_ = [](size_t packet_size) { return (packet_size == 1127); };
+  }
   else {
     ROS_ERROR("Invalid model name");
   }
