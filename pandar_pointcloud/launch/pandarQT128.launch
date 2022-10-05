@@ -1,0 +1,43 @@
+<launch>
+  <arg name="launch_driver" default="false" />
+
+  <arg name="pcap"  default=""/>
+  <arg name="device_ip" default="192.168.1.201"/>
+  <arg name="lidar_port"  default="2368"/>
+  <arg name="gps_port"  default="10110"/>
+  <arg name="scan_phase"  default="0"/>
+  <arg name="return_mode" default="Dual"/>
+  <arg name="dual_return_distance_threshold" default="0.1"/>
+  <arg name="model" default="PandarQT128"/>
+  <arg name="frame_id" default="pandar"/>
+  <arg name="calibration"  default="$(find pandar_pointcloud)/config/qt128.csv"/>
+  <arg name="manager" default="pandar_nodelet_manager"/>
+
+  <!-- nodelet manager -->
+  <node pkg="nodelet" type="nodelet" name="$(arg manager)" args="manager" output="screen"/>
+
+  <!-- pandar driver -->
+  <node pkg="nodelet" type="nodelet" name="$(arg manager)_driver"
+        args="load pandar_driver/DriverNodelet $(arg manager)" if="$(arg launch_driver)" output="screen">
+    <param name="pcap" type="string" value="$(arg pcap)"/>
+    <param name="device_ip" type="string" value="$(arg device_ip)"/>
+    <param name="lidar_port"  type="int" value="$(arg lidar_port)"/>
+    <param name="gps_port"  type="int" value="$(arg gps_port)"/>
+    <param name="scan_phase"  type="double" value="$(arg scan_phase)"/>
+    <param name="model"  type="string" value="$(arg model)"/>
+    <param name="frame_id"  type="string" value="$(arg frame_id)"/>
+  </node>
+
+  <!-- pandar cloud -->
+  <node pkg="nodelet" type="nodelet" name="$(arg manager)_cloud"
+        args="load pandar_pointcloud/CloudNodelet $(arg manager)" output="screen">
+    <remap from="pandar_points" to="pointcloud_raw" />
+    <remap from="pandar_points_ex" to="pointcloud_raw_ex" />
+    <param name="scan_phase" type="double" value="$(arg scan_phase)"/>
+    <param name="return_mode"  type="string" value="$(arg return_mode)"/>
+    <param name="dual_return_distance_threshold"  type="double" value="$(arg dual_return_distance_threshold)"/>
+    <param name="model" type="string" value="$(arg model)"/>
+    <param name="device_ip" type="string" value="$(arg device_ip)"/>
+    <param name="calibration" type="string" value="$(arg calibration)"/>
+  </node>
+</launch>

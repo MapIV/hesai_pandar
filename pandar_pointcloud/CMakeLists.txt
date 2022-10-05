@@ -39,6 +39,7 @@ add_library(pandar_cloud
   src/lib/decoder/pandar_xt_decoder.cpp
   src/lib/decoder/pandar_xtm_decoder.cpp
   src/lib/decoder/pandar64_decoder.cpp
+  src/lib/decoder/pandar_qt128_decoder
 )
 target_link_libraries(pandar_cloud
   ${catkin_LIBRARIES}
@@ -50,7 +51,7 @@ add_executable(pandar_cloud_node
 )
 
 target_link_libraries(pandar_cloud_node
-  pandar_cloud  
+  pandar_cloud
   ${catkin_LIBRARIES}
 )
 

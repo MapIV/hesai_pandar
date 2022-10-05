@@ -2,15 +2,15 @@
   <arg name="scan_phase"  default="0"/>
   <arg name="return_mode" default="Dual"/>
   <arg name="dual_return_distance_threshold" default="0.1"/>
-  <arg name="model" default="Pandar40P"/>
+  <arg name="model" default="PandarQT128"/>
   <arg name="device_ip" default="192.168.1.201"/>
-  <arg name="calibration"  default="$(find pandar_pointcloud)/config/40p.csv"/>
+  <arg name="calibration"  default="$(find pandar_pointcloud)/config/qt128.csv"/>
   <arg name="manager" default="pandar_nodelet_manager"/>
 
-  <!-- <node pkg="pandar_pointcloud" name="pandar_cloud_node" type="pandar_cloud_node" output="screen" >
-    <param name="scan_phase"  type="double" value="$(arg scan_phase)"/>
-    <param name="model"  type="string" value="$(arg model)"/>
-  </node> -->
+  <node pkg="pandar_pointcloud" name="pandar_cloud_node" type="pandar_cloud_node" output="screen" >
+    <param name="scan_phase" type="double" value="$(arg scan_phase)"/>
+    <param name="model" type="string" value="$(arg model)"/>
+  </node>
 
   <!-- nodelet manager -->
   <node pkg="nodelet" type="nodelet" name="$(arg manager)" args="manager" />
