@@ -15,6 +15,7 @@ public:
   enum class ReturnMode : int8_t
   {
     DUAL,
+    FIRST,
     STRONGEST,
     LAST,
   };
@@ -23,6 +24,7 @@ public:
     INVALID = 0,
     SINGLE_STRONGEST,
     SINGLE_LAST,
+    SINGLE_FIRST,
     DUAL_STRONGEST_FIRST,
     DUAL_STRONGEST_LAST,
     DUAL_WEAK_FIRST,
@@ -30,7 +32,7 @@ public:
     DUAL_ONLY,
   };
 
-  Pandar128E4XDecoder(Calibration& calibration,
+  explicit Pandar128E4XDecoder(Calibration& calibration,
                       float scan_phase = 0.0f,
                       double dual_return_distance_threshold = 0.1,
                       ReturnMode return_mode = ReturnMode::DUAL);
@@ -40,9 +42,12 @@ public:
 
 private:
   bool parsePacket(const pandar_msgs::PandarPacket& raw_packet);
-  PointXYZIRADT build_point(int block_id, int unit_id, uint8_t return_type);
-  PointcloudXYZIRADT convert(const int block_id);
-  PointcloudXYZIRADT convert_dual(const int block_id);
+  PointXYZIRADT build_point(const Block& block,
+                            const size_t& laser_id,
+                            const uint16_t& azimuth,
+                            const double& unix_second);
+  PointcloudXYZIRADT convert();
+  PointcloudXYZIRADT convert_dual();
 
   std::array<float, LASER_COUNT> elev_angle_{};
   std::array<float, LASER_COUNT> elev_angle_rad_{};

@@ -7,6 +7,7 @@
 #include "pandar_pointcloud/decoder/pandar_xtm_decoder.hpp"
 #include "pandar_pointcloud/decoder/pandar64_decoder.hpp"
 #include "pandar_pointcloud/decoder/pandar_qt128_decoder.hpp"
+#include "pandar_pointcloud/decoder/pandar_128_e4x_decoder.hpp"
 
 #include <chrono>
 #include <thread>
@@ -140,6 +141,24 @@ PandarCloud::PandarCloud(ros::NodeHandle node, ros::NodeHandle private_nh)
     decoder_ = std::make_shared<pandar_qt128::PandarQT128Decoder>(calibration_, scan_phase_,
                                                             dual_return_distance_threshold_,
                                                             selected_return_mode);
+  }
+  else if (model_ == "Pandar128E4X") {
+    pandar_128_e4x::Pandar128E4XDecoder::ReturnMode selected_return_mode;
+    if (return_mode_ == "First")
+      selected_return_mode = pandar_128_e4x::Pandar128E4XDecoder::ReturnMode::FIRST;
+    else if (return_mode_ == "Last")
+      selected_return_mode = pandar_128_e4x::Pandar128E4XDecoder::ReturnMode::LAST;
+    else if (return_mode_ == "Strongest")
+      selected_return_mode = pandar_128_e4x::Pandar128E4XDecoder::ReturnMode::STRONGEST;
+    else if (return_mode_ == "Dual")
+      selected_return_mode = pandar_128_e4x::Pandar128E4XDecoder::ReturnMode::DUAL;
+    else {
+      ROS_ERROR("Invalid return mode, defaulting to dual return mode");
+      selected_return_mode = pandar_128_e4x::Pandar128E4XDecoder::ReturnMode::DUAL;
+    }
+    decoder_ = std::make_shared<pandar_128_e4x::Pandar128E4XDecoder>(calibration_, scan_phase_,
+                                                                  dual_return_distance_threshold_,
+                                                                  selected_return_mode);
   }
   else {
     // TODO : Add other models
