@@ -45,9 +45,9 @@ PandarDriver::PandarDriver(ros::NodeHandle node, ros::NodeHandle private_nh)
     azimuth_index_ = 8;  // 8 + 192 * [0-5]
     is_valid_packet_ = [](size_t packet_size) { return (packet_size == 1194 || packet_size == 1198); };
   }
-  else if (model_ == "Pandar128") {
+  else if (model_ == "Pandar128E4X") {
     azimuth_index_ = 12;  // 12 + 386 * [0-1]
-    is_valid_packet_ = [](size_t packet_size) { return (packet_size == 812); };
+    is_valid_packet_ = [](size_t packet_size) { return (packet_size == 1117 || packet_size == 861); };
   }
   else if (model_ == "PandarXTM") {
     azimuth_index_ = 12;  // 12 + 130 * [0-7]
