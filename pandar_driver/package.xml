@@ -15,7 +15,6 @@
   <depend>nodelet</depend>
   <depend>pluginlib</depend>
   <depend>pandar_msgs</depend>
-  <depend>libpcap</depend>
   <depend>pandar_api</depend>
   <depend>libpcap</depend>
   
