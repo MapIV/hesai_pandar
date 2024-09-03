@@ -11,6 +11,7 @@
 
 #include <chrono>
 #include <thread>
+#include <limits>
 
 namespace
 {
@@ -216,7 +217,9 @@ void PandarCloud::onProcessScan(const pandar_msgs::PandarScan::ConstPtr& scan_ms
     decoder_->unpack(packet);
     if (decoder_->hasScanned()) {
       pointcloud = decoder_->getPointcloud();
-      if (pointcloud->points.size() > 0) {
+      if (pointcloud->points.size() > 0 
+          && (pointcloud->points[0].time_stamp < PandarCloud::MAX_ROS_TIME)
+        ) {
         pointcloud->header.stamp = pcl_conversions::toPCL(ros::Time(pointcloud->points[0].time_stamp));
         pointcloud->header.frame_id = scan_msg->header.frame_id;
         pointcloud->height = 1;

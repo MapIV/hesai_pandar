@@ -18,7 +18,7 @@ class PandarCloud
 public:
   PandarCloud(ros::NodeHandle node, ros::NodeHandle private_nh);
   ~PandarCloud();
-
+  const double MAX_ROS_TIME = 4294967296.;//edge case when ROS Time exceeds 2^32
 private:
   bool setupCalibration();
   void onProcessScan(const pandar_msgs::PandarScan::ConstPtr& msg);
