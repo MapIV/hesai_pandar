@@ -1,10 +1,10 @@
 <launch>
   <arg name="config_file" default="$(find pandar_monitor)/config/pandar_monitor.yaml"/>
-  <arg name="ip_address" default="192.168.1.204" />
-  <arg name="output" default="log"/>
+  <arg name="ip_address" default="192.168.1.201" />
+  <arg name="output" default="screen"/>
 
-  <node pkg="pandar_monitor" type="pandar_monitor" name="pandar_monitor" output="$(arg output)" respawn="true">
+  <node pkg="pandar_monitor" type="pandar_monitor" name="pandar_monitor" output="$(arg output)">
     <rosparam command="load" file="$(arg config_file)"/>
     <param name="ip_address" value="$(arg ip_address)" />
-  </node>/>
+  </node>
 </launch>

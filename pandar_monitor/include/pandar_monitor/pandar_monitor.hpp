@@ -42,6 +42,12 @@ protected:
   void checkPTP(
     diagnostic_updater::DiagnosticStatusWrapper & stat);
 
+  void checkGPSPPS(
+    diagnostic_updater::DiagnosticStatusWrapper & stat);
+
+  void checkGPSGPRMC(
+    diagnostic_updater::DiagnosticStatusWrapper & stat);
+
   void onTimer(const ros::TimerEvent & event);
 
   ros::NodeHandle nh_{""};
@@ -84,6 +90,12 @@ protected:
     "tracking",
     "locked",
     "frozen",
+  };
+
+  const char *gps_message_[3] = {
+    "unlocked",
+    "locked",
+    "warning"
   };
 };
 

@@ -33,6 +33,8 @@ PandarMonitor::PandarMonitor()
   updater_.add("pandar_connection", this, &PandarMonitor::checkConnection);
   updater_.add("pandar_temperature", this, &PandarMonitor::checkTemperature);
   updater_.add("pandar_ptp", this, &PandarMonitor::checkPTP);
+  updater_.add("pandar_gpspps",this, &PandarMonitor::checkGPSPPS);
+  updater_.add("pandar_gpsgprmc",this, &PandarMonitor::checkGPSGPRMC);
 
   client_ = std::make_unique<pandar_api::TCPClient>(ip_address_, static_cast<int>(timeout_ * 1000));
 
@@ -112,3 +114,47 @@ void PandarMonitor::checkPTP(diagnostic_updater::DiagnosticStatusWrapper & stat)
 }
 
 void PandarMonitor::onTimer(const ros::TimerEvent & event) { updater_.force_update(); }
+
+void PandarMonitor::checkGPSPPS(diagnostic_updater::DiagnosticStatusWrapper & stat)
+{
+  /* get LiDAR status*/
+  pandar_api::LidarStatus status;
+  auto code = client_->getLidarStatus(status);
+  if (code == pandar_api::TCPClient::ReturnCode::SUCCESS)
+  {
+    if(status.gps_pps_lock == 0)
+    {
+      stat.summary(DiagStatus::ERROR, gps_message_[0]);
+    }
+    else if(status.gps_pps_lock == 1)
+    {
+      stat.summary(DiagStatus::OK, gps_message_[1]);
+    }
+    else
+    {
+      stat.summary(DiagStatus::WARN, gps_message_[2]);
+    }
+  }
+}
+
+void PandarMonitor::checkGPSGPRMC(diagnostic_updater::DiagnosticStatusWrapper & stat)
+{
+  /* get LiDAR status*/
+  pandar_api::LidarStatus status;
+  auto code = client_->getLidarStatus(status);
+  if (code == pandar_api::TCPClient::ReturnCode::SUCCESS)
+  {
+    if(status.gps_gprmc_status == 0)
+    {
+      stat.summary(DiagStatus::ERROR, gps_message_[0]);
+    }
+    else if(status.gps_gprmc_status == 1)
+    {
+      stat.summary(DiagStatus::OK, gps_message_[1]);
+    }
+    else
+    {
+      stat.summary(DiagStatus::WARN, gps_message_[2]);
+    }
+  }
+}
