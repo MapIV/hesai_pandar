@@ -17,6 +17,7 @@
 
 #include "pandar_monitor/pandar_monitor.hpp"
 #include <boost/algorithm/string/join.hpp>
+#define FMT_HEADER_ONLY
 #include <fmt/format.h>
 
 PandarMonitor::PandarMonitor()
