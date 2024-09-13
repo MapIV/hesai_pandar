@@ -90,6 +90,11 @@ PointcloudXYZIRADT PandarXTDecoder::convert(const int block_id)
   // double unix_second = raw_packet.header.stamp.toSec() // system-time (packet receive time)
   double unix_second = static_cast<double>(timegm(&packet_.t));  // sensor-time (ppt/gps)
 
+  if (timestamp_ < 0)
+  {
+    timestamp_ = unix_second + static_cast<double>(packet_.usec) / 1000000.0;
+  }
+
   const auto& block = packet_.blocks[block_id];
   for (size_t unit_id = 0; unit_id < UNIT_NUM; ++unit_id) {
     PointXYZIRADT point;

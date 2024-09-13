@@ -220,7 +220,8 @@ void PandarCloud::onProcessScan(const pandar_msgs::PandarScan::ConstPtr& scan_ms
       if (pointcloud->points.size() > 0 
           && (pointcloud->points[0].time_stamp < PandarCloud::MAX_ROS_TIME)
         ) {
-        pointcloud->header.stamp = pcl_conversions::toPCL(ros::Time(pointcloud->points[0].time_stamp));
+        // pointcloud->header.stamp = pcl_conversions::toPCL(ros::Time(pointcloud->points[0].time_stamp));
+        pointcloud->header.stamp = pcl_conversions::toPCL(ros::Time(decoder_->getTimestamp()));
         pointcloud->header.frame_id = scan_msg->header.frame_id;
         pointcloud->height = 1;
 

@@ -18,5 +18,10 @@ public:
   virtual bool hasScanned() = 0;
 
   virtual PointcloudXYZIRADT getPointcloud() = 0;
+
+  virtual double getTimestamp() { return timestamp_; }
+
+protected:
+  double timestamp_;
 };
 }  // namespace pandar_pointcloud
