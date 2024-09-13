@@ -19,7 +19,12 @@ public:
 
   virtual PointcloudXYZIRADT getPointcloud() = 0;
 
-  virtual double getTimestamp() { return timestamp_; }
+  virtual double getTimestamp()
+  {
+    double tmp_timestamp = timestamp_;
+    timestamp_ = -1;
+    return tmp_timestamp;
+  }
 
 protected:
   double timestamp_;

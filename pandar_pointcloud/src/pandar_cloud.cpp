@@ -215,22 +215,35 @@ void PandarCloud::onProcessScan(const pandar_msgs::PandarScan::ConstPtr& scan_ms
 
   for (auto& packet : scan_msg->packets) {
     decoder_->unpack(packet);
-    if (decoder_->hasScanned()) {
-      pointcloud = decoder_->getPointcloud();
-      if (pointcloud->points.size() > 0 
-          && (pointcloud->points[0].time_stamp < PandarCloud::MAX_ROS_TIME)
-        ) {
-        // pointcloud->header.stamp = pcl_conversions::toPCL(ros::Time(pointcloud->points[0].time_stamp));
-        pointcloud->header.stamp = pcl_conversions::toPCL(ros::Time(decoder_->getTimestamp()));
-        pointcloud->header.frame_id = scan_msg->header.frame_id;
-        pointcloud->height = 1;
+    // if (decoder_->hasScanned()) {
+    //   pointcloud = decoder_->getPointcloud();
+    //   if (pointcloud->points.size() > 0 
+    //       && (pointcloud->points[0].time_stamp < PandarCloud::MAX_ROS_TIME)
+    //     ) {
+    //     // pointcloud->header.stamp = pcl_conversions::toPCL(ros::Time(pointcloud->points[0].time_stamp));
+    //     pointcloud->header.stamp = pcl_conversions::toPCL(ros::Time(decoder_->getTimestamp()));
+    //     pointcloud->header.frame_id = scan_msg->header.frame_id;
+    //     pointcloud->height = 1;
 
-        pandar_points_ex_pub_.publish(pointcloud);
-        if (pandar_points_pub_.getNumSubscribers() > 0) {
-          pandar_points_pub_.publish(convertPointcloud(pointcloud));
-        }
-      }
-    }
+    //     pandar_points_ex_pub_.publish(pointcloud);
+    //     if (pandar_points_pub_.getNumSubscribers() > 0) {
+    //       pandar_points_pub_.publish(convertPointcloud(pointcloud));
+    //     }
+    //   }
+    // }
+  }
+
+  pointcloud = decoder_->getPointcloud();
+  if (pointcloud->points.size() > 0)
+  {
+    pointcloud->header.stamp = pcl_conversions::toPCL(ros::Time(decoder_->getTimestamp()));
+    pointcloud->header.frame_id = scan_msg->header.frame_id;
+    pointcloud->height = 1;
+    pandar_points_ex_pub_.publish(pointcloud);
+    // if (pandar_points_pub_.getNumSubscribers() > 0)
+    // {
+    //   pandar_points_pub_.publish(convertPointcloud(pointcloud));
+    // }
   }
 }
 
