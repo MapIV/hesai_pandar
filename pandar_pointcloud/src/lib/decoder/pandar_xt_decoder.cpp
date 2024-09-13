@@ -94,6 +94,8 @@ PointcloudXYZIRADT PandarXTDecoder::convert(const int block_id)
   if (timestamp_ < 0)
   {
     timestamp_ = unix_second + static_cast<double>(packet_.usec) / 1000000.0;
+    PointcloudXYZIRADT scan_pc(new pcl::PointCloud<PointXYZIRADT>);
+    scan_pc_ = scan_pc;
   }
 
   const auto& block = packet_.blocks[block_id];

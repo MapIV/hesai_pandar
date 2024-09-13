@@ -168,7 +168,7 @@ PandarCloud::PandarCloud(ros::NodeHandle node, ros::NodeHandle private_nh)
   }
 
   pandar_packet_sub_ =
-      node.subscribe("pandar_packets", 10, &PandarCloud::onProcessScan, this, ros::TransportHints().tcpNoDelay(true));
+      node.subscribe("/lidar/0/pandar_packets", 10, &PandarCloud::onProcessScan, this, ros::TransportHints().tcpNoDelay(true));
   pandar_points_pub_ = node.advertise<sensor_msgs::PointCloud2>("pandar_points", 10);
   pandar_points_ex_pub_ = node.advertise<sensor_msgs::PointCloud2>("pandar_points_ex", 10);
   ROS_INFO_STREAM("Ready");
@@ -236,14 +236,12 @@ void PandarCloud::onProcessScan(const pandar_msgs::PandarScan::ConstPtr& scan_ms
   pointcloud = decoder_->getPointcloud();
   if (pointcloud->points.size() > 0)
   {
-    pointcloud->header.stamp = pcl_conversions::toPCL(ros::Time(decoder_->getTimestamp()));
-    pointcloud->header.frame_id = scan_msg->header.frame_id;
-    pointcloud->height = 1;
-    pandar_points_ex_pub_.publish(pointcloud);
-    // if (pandar_points_pub_.getNumSubscribers() > 0)
-    // {
-    //   pandar_points_pub_.publish(convertPointcloud(pointcloud));
-    // }
+    sensor_msgs::PointCloud2 ros_pointcloud;
+    pcl::toROSMsg(*pointcloud, ros_pointcloud);
+    ros_pointcloud.header = scan_msg->header;
+    ros_pointcloud.header.stamp = ros::Time(decoder_->getTimestamp());
+
+    pandar_points_ex_pub_.publish(ros_pointcloud);
   }
 }
 

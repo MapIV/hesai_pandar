@@ -24,6 +24,13 @@ public:
   void unpack(const pandar_msgs::PandarPacket& raw_packet) override;
   bool hasScanned() override;
   PointcloudXYZIRADT getPointcloud() override;
+  double getTimestamp() override
+  {
+    double tmp_timestamp = timestamp_;
+    timestamp_ = -1;
+    scan_pc_->clear();
+    return tmp_timestamp;
+  }
 
 private:
   bool parsePacket(const pandar_msgs::PandarPacket& raw_packet);
