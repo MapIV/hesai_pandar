@@ -61,7 +61,7 @@ void PandarXTMDecoder::unpack(const pandar_msgs::PandarPacket& raw_packet)
 
   if (timestamp_ < 0) {
     double unix_second = static_cast<double>(timegm(&packet_.t));
-    timestamp_ = unix_second + static_cast<double>(packet_.usec) * 1000000.0;
+    timestamp_ = unix_second + static_cast<double>(packet_.usec) / 1000000.0;
     PointcloudXYZIRADT scan_pc(new pcl::PointCloud<PointXYZIRADT>);
     scan_pc_ = scan_pc;
   }
