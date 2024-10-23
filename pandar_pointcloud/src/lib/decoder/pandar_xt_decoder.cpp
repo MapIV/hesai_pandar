@@ -68,6 +68,14 @@ void PandarXTDecoder::unpack(const pandar_msgs::PandarPacket& raw_packet)
   bool dual_return = (packet_.return_mode != FIRST_RETURN && packet_.return_mode != STRONGEST_RETURN && packet_.return_mode != LAST_RETURN);
   auto step = dual_return ? 2 : 1;
 
+  if (timestamp_ < 0)
+  {
+    double unix_second = static_cast<double>(timegm(&packet_.t));  // sensor-time (ppt/gps)
+    timestamp_ = unix_second + static_cast<double>(packet_.usec) / 1000000.0;
+    PointcloudXYZIRADT scan_pc(new pcl::PointCloud<PointXYZIRADT>);
+    scan_pc_ = scan_pc;
+  }
+
   for (int block_id = 0; block_id < BLOCK_NUM; block_id += step) {
     auto block_pc = dual_return ? convert_dual(block_id) : convert(block_id);
     *scan_pc_ += *block_pc;
@@ -90,13 +98,6 @@ PointcloudXYZIRADT PandarXTDecoder::convert(const int block_id)
 
   // double unix_second = raw_packet.header.stamp.toSec() // system-time (packet receive time)
   double unix_second = static_cast<double>(timegm(&packet_.t));  // sensor-time (ppt/gps)
-
-  if (timestamp_ < 0)
-  {
-    timestamp_ = unix_second + static_cast<double>(packet_.usec) / 1000000.0;
-    PointcloudXYZIRADT scan_pc(new pcl::PointCloud<PointXYZIRADT>);
-    scan_pc_ = scan_pc;
-  }
 
   const auto& block = packet_.blocks[block_id];
   for (size_t unit_id = 0; unit_id < UNIT_NUM; ++unit_id) {
