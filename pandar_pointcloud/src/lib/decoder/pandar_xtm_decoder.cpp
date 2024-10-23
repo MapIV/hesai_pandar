@@ -58,30 +58,38 @@ void PandarXTMDecoder::unpack(const pandar_msgs::PandarPacket& raw_packet)
     overflow_pc_.reset(new pcl::PointCloud<PointXYZIRADT>);
     has_scanned_ = false;
   }
+
+  if (timestamp_ < 0) {
+    double unix_second = static_cast<double>(timegm(&packet_.t));
+    timestamp_ = unix_second + static_cast<double>(packet_.usec) * 1000000.0;
+    PointcloudXYZIRADT scan_pc(new pcl::PointCloud<PointXYZIRADT>);
+    scan_pc_ = scan_pc;
+  }
+
   for (int block_id = 0; block_id < packet_.header.chBlockNumber; ++block_id) {
     int azimuthGap = 0; /* To do */
     double timestampGap = 0; /* To do */
-    if(last_azimuth_ > packet_.blocks[block_id].azimuth) {
-      azimuthGap = static_cast<int>(packet_.blocks[block_id].azimuth) + (36000 - static_cast<int>(last_azimuth_));
-    } else {
-      azimuthGap = static_cast<int>(packet_.blocks[block_id].azimuth) - static_cast<int>(last_azimuth_);
-    }
-    timestampGap = packet_.usec - last_timestamp_ + 0.001;
-    if (last_azimuth_ != packet_.blocks[block_id].azimuth && \
-            (azimuthGap / timestampGap) < 36000 * 100 ) {
-      /* for all the blocks */
-      if ((last_azimuth_ > packet_.blocks[block_id].azimuth &&
-           start_angle_ <= packet_.blocks[block_id].azimuth) ||
-          (last_azimuth_ < start_angle_ &&
-           start_angle_ <= packet_.blocks[block_id].azimuth)) {
-          has_scanned_ = true;
-      }
-    } else {
-      //printf("last_azimuth_:%d pkt.blocks[block_id].azimuth:%d  *******azimuthGap:%d\n", last_azimuth_, pkt.blocks[block_id].azimuth, azimuthGap);
-    }
+    // if(last_azimuth_ > packet_.blocks[block_id].azimuth) {
+    //   azimuthGap = static_cast<int>(packet_.blocks[block_id].azimuth) + (36000 - static_cast<int>(last_azimuth_));
+    // } else {
+    //   azimuthGap = static_cast<int>(packet_.blocks[block_id].azimuth) - static_cast<int>(last_azimuth_);
+    // }
+    // timestampGap = packet_.usec - last_timestamp_ + 0.001;
+    // if (last_azimuth_ != packet_.blocks[block_id].azimuth && \
+    //         (azimuthGap / timestampGap) < 36000 * 100 ) {
+    //   /* for all the blocks */
+    //   if ((last_azimuth_ > packet_.blocks[block_id].azimuth &&
+    //        start_angle_ <= packet_.blocks[block_id].azimuth) ||
+    //       (last_azimuth_ < start_angle_ &&
+    //        start_angle_ <= packet_.blocks[block_id].azimuth)) {
+    //       has_scanned_ = true;
+    //   }
+    // } else {
+    //   //printf("last_azimuth_:%d pkt.blocks[block_id].azimuth:%d  *******azimuthGap:%d\n", last_azimuth_, pkt.blocks[block_id].azimuth, azimuthGap);
+    // }
     CalcXTPointXYZIT(block_id, packet_.header.chLaserNumber, scan_pc_);
-    last_azimuth_ = packet_.blocks[block_id].azimuth;
-    last_timestamp_ = packet_.usec;
+    // last_azimuth_ = packet_.blocks[block_id].azimuth;
+    // last_timestamp_ = packet_.usec;
   }
 }
 

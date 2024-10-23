@@ -14,7 +14,7 @@
   <arg name="manager" default="pandar_nodelet_manager"/>
 
   <!-- nodelet manager -->
-  <node pkg="nodelet" type="nodelet" name="$(arg manager)" args="manager" />
+  <node pkg="nodelet" type="nodelet" name="$(arg manager)" args="manager" output="screen"/>
 
   <!-- pandar driver -->
   <node pkg="nodelet" type="nodelet" name="$(arg manager)_driver"
