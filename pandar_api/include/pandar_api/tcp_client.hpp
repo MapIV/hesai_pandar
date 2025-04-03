@@ -11,12 +11,13 @@ struct LidarStatus
 {
   uint32_t uptime;
   uint16_t motor_speed;
-  uint32_t temp[8];
+  int32_t temp[8];
   uint8_t gps_pps_lock;
   uint8_t gps_gprmc_status;
   uint32_t startup_times;
   uint32_t total_operation_time;    
   uint8_t ptp_clock_status;
+  uint8_t reserved[5];
 };
 
 struct InventoryInfo
@@ -62,6 +63,7 @@ public:
   ReturnCode getLidarRange(uint16_t* range);
   ReturnCode getLidarStatus(LidarStatus& status);
   ReturnCode getPTPDiagnostics(PTPDiag& diag);
+  std::vector<uint8_t> payload_;
 
 private:
   boost::asio::io_service io_service_;
@@ -149,7 +151,7 @@ private:
   };
 
   MessageHeader header_;
-  std::vector<uint8_t> payload_;
+  // std::vector<uint8_t> payload_;
   std::vector<uint8_t> buffer_;
   ReturnCode return_code_;
   int32_t timeout_;
