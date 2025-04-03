@@ -17,7 +17,6 @@
 
 #include "pandar_monitor/pandar_monitor.hpp"
 #include <boost/algorithm/string/join.hpp>
-#include <fmt/format.h>
 
 PandarMonitor::PandarMonitor()
 {
@@ -70,31 +69,43 @@ void PandarMonitor::checkTemperature(diagnostic_updater::DiagnosticStatusWrapper
 
   int error = DiagStatus::OK;
   int warn = DiagStatus::OK;
-  std::vector<std::string> msg;  
 
   for(size_t i = 0; i < 8; ++i){
     float temp = static_cast<float>(status.temp[i]) / 100.0f;
     auto pos = position_[i];
-    stat.addf(position_[i], "%.2lf DegC", temp);
 
     // Check board temperature
     if (temp < temp_cold_error_) {
       error = DiagStatus::ERROR;
-      msg.emplace_back(fmt::format("{} temperature too cold", pos));
-    } else if (temp < temp_cold_warn_) {
+      stat.addf(position_[i], "%.2lf DegC [x]", temp);
+      ROS_ERROR_STREAM(pos << ": " << temp);
+  } else if (temp < temp_cold_warn_) {
       warn = DiagStatus::WARN;
-      msg.emplace_back(fmt::format("{} temperature cold", pos));
+      stat.addf(position_[i], "%.2lf DegC [!]", temp);
+      ROS_WARN_STREAM(pos << ": " << temp);
     } else if (temp > temp_hot_error_) {
       error = DiagStatus::ERROR;
-      msg.emplace_back(fmt::format("{} temperature too hot", pos));
+      stat.addf(position_[i], "%.2lf DegC [x]", temp);
+      ROS_ERROR_STREAM(pos << ": " << temp);
     } else if (temp > temp_hot_warn_) {
       warn = DiagStatus::WARN;
-      msg.emplace_back(fmt::format("{} temperature hot", pos));
+      stat.addf(position_[i], "%.2lf DegC [!]", temp);
+      ROS_WARN_STREAM(pos << ": " << temp);
+    } else {
+      stat.addf(position_[i], "%.2lf DegC", temp);
     }
   }
 
-  if (msg.empty()) msg.emplace_back("OK");
-  stat.summary(std::max(error, warn), boost::algorithm::join(msg, ", "));
+  std::string msg;
+  if (error == DiagStatus::ERROR) {
+    msg = "ERROR";
+  } else if (warn == DiagStatus::WARN) {
+    msg = "WARN";
+  } else {
+    msg = "OK";
+  }
+
+  stat.summary(std::max(error, warn), msg);
 }
 
 void PandarMonitor::checkPTP(diagnostic_updater::DiagnosticStatusWrapper & stat)

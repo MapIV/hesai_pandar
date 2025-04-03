@@ -74,15 +74,15 @@ protected:
   const std::map<int, const char *> rpm_dict_ = {
     {DiagStatus::OK, "OK"}, {DiagStatus::WARN, "RPM low"}, {DiagStatus::ERROR, "RPM too low"}};
 
-  const char *position_[8] = {
-    "Bottom circuit RT1",
-    "Bottom circuit RT2",
-    "Average temperature of the two laser emitting boards RT1 & RT2",
-    "Laser emitting board RT1",
-    "Laser emitting board RT2",
-    "Receiving board RT1",
-    "Top circuit RT1",
-    "Top circuit RT2",
+  const char *position_[8] = {    // for XT32, XT32M, OT128
+    "Bottom circuit T1",
+    "Bottom circuit T2",
+    "Laser emitting board RT_L1", // display in Pandar Console
+    "Laser emitting board RT_L2",
+    "Laser receiving board RT_R",
+    "Laser receiving board RT2",
+    "Top circuit RT3",
+    "Top circuit RT4",
   };
 
   const char *ptp_[8] = {
