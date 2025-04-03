@@ -79,7 +79,7 @@ void PandarMonitor::checkTemperature(diagnostic_updater::DiagnosticStatusWrapper
       error = DiagStatus::ERROR;
       stat.addf(position_[i], "%.2lf DegC [x]", temp);
       ROS_ERROR_STREAM(pos << ": " << temp);
-  } else if (temp < temp_cold_warn_) {
+    } else if (temp < temp_cold_warn_) {
       warn = DiagStatus::WARN;
       stat.addf(position_[i], "%.2lf DegC [!]", temp);
       ROS_WARN_STREAM(pos << ": " << temp);
@@ -95,6 +95,11 @@ void PandarMonitor::checkTemperature(diagnostic_updater::DiagnosticStatusWrapper
       stat.addf(position_[i], "%.2lf DegC", temp);
     }
   }
+
+  stat.add("threshold_cold_error", temp_cold_error_);
+  stat.add("threshold_cold_warn",  temp_cold_warn_);
+  stat.add("threshold_hot_warn",   temp_hot_warn_);
+  stat.add("threshold_hot_error",  temp_hot_error_);
 
   std::string msg;
   if (error == DiagStatus::ERROR) {
