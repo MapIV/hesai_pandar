@@ -14,8 +14,6 @@ find_package(catkin REQUIRED COMPONENTS
   pandar_api
 )
 
-find_package(fmt REQUIRED)
-
 ###################################
 ## catkin specific configuration ##
 ###################################
@@ -48,7 +46,7 @@ add_executable(pandar_monitor
 add_dependencies(pandar_monitor ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(pandar_monitor ${catkin_LIBRARIES} cpprest crypto fmt)
+target_link_libraries(pandar_monitor ${catkin_LIBRARIES} cpprest crypto)
 
 
 #############
