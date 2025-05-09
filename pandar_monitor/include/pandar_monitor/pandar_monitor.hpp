@@ -29,7 +29,9 @@
 class MovingAverage
 {
 public:
-  MovingAverage(int window_size) {
+  MovingAverage() {};
+
+  void setWindowSize(int window_size) {
     window_size_ = window_size;
     buff_ = std::vector<float>(window_size, 0); 
   };
@@ -101,7 +103,7 @@ protected:
   float rpm_ratio_warn_;
   float rpm_ratio_error_;
 
-  std::vector<MovingAverage> temp_list_;
+  MovingAverage temp_list_[8];
 
   const std::map<int, const char *> rpm_dict_ = {
     {DiagStatus::OK, "OK"}, {DiagStatus::WARN, "RPM low"}, {DiagStatus::ERROR, "RPM too low"}};

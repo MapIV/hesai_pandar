@@ -37,8 +37,8 @@ PandarMonitor::PandarMonitor()
 
   client_ = std::make_unique<pandar_api::TCPClient>(ip_address_, static_cast<int>(timeout_ * 1000));
 
-  for(size_t i = 0; i < 8; ++i) {
-    temp_list_.push_back(MovingAverage(10));
+  for (MovingAverage& ave_temp: temp_list_) {
+    ave_temp.setWindowSize(10);
   }
 
   updater_.setHardwareID("pandar");
