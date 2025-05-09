@@ -33,10 +33,10 @@ public:
 
   void setWindowSize(int window_size) {
     window_size_ = window_size;
-    buff_ = std::vector<float>(window_size, 0); 
+    buff_ = std::vector<int>(window_size, 0); 
   };
   
-  float update(float &new_data) {
+  int update(int &new_data) {
     if (buff_idx_ >= window_size_) { buff_idx_ = 0; }
 
     sum_ -= buff_[buff_idx_];
@@ -51,9 +51,9 @@ public:
   
 protected:
   int window_size_ = 0;
-  std::vector<float> buff_;
+  std::vector<int> buff_;
   int buff_idx_ = 0;
-  float sum_ = 0;
+  int sum_ = 0;
   float ave_ = 0;
 };
 

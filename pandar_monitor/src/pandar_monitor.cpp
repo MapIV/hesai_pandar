@@ -77,14 +77,11 @@ void PandarMonitor::checkTemperature(diagnostic_updater::DiagnosticStatusWrapper
 
   for(size_t i = 0; i < 8; ++i){
     float raw_temp = static_cast<float>(status.temp[i]) / 100.0f;
-    float temp = temp_list_[i].update(raw_temp);
-    auto pos = position_[i];
-
-    if ( i == 2 ) {
-      ROS_INFO_STREAM(pos << ": raw: " << raw_temp << " ave: " << temp);
-    }
+    float temp = temp_list_[i].update(status.temp[i]); // unit: degC*100
+    temp = temp / 100.0f;
 
     // Check board temperature
+    auto pos = position_[i];
     if (raw_temp < temp_cold_error_) {
       error = DiagStatus::ERROR;
       stat.addf(position_[i], "%.2lf DegC [x]", temp);
