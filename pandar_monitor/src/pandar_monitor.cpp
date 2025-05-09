@@ -50,7 +50,6 @@ void PandarMonitor::checkConnection(diagnostic_updater::DiagnosticStatusWrapper 
 {
   pandar_api::InventoryInfo info;
   auto code = client_->getInventoryInfo(info);
-  stat.add("return_code", (int)code); 
   if(code != pandar_api::TCPClient::ReturnCode::SUCCESS){
     stat.summary(DiagStatus::ERROR, "ERROR");
     return;
@@ -66,7 +65,6 @@ void PandarMonitor::checkTemperature(diagnostic_updater::DiagnosticStatusWrapper
 {
   pandar_api::LidarStatus status;
   auto code = client_->getLidarStatus(status);
-  stat.add("return_code", (int)code); 
   if(code != pandar_api::TCPClient::ReturnCode::SUCCESS){
     stat.summary(DiagStatus::ERROR, "ERROR");
     return;
@@ -82,25 +80,21 @@ void PandarMonitor::checkTemperature(diagnostic_updater::DiagnosticStatusWrapper
 
     // Check board temperature
     auto pos = position_[i];
-    if (raw_temp < temp_cold_error_) {
+    if (temp < temp_cold_error_) {
       error = DiagStatus::ERROR;
       stat.addf(position_[i], "%.2lf DegC [x]", temp);
-      ROS_ERROR_STREAM(pos << ": " << raw_temp);
 
-    } else if (raw_temp < temp_cold_warn_) {
+    } else if (temp < temp_cold_warn_) {
       warn = DiagStatus::WARN;
       stat.addf(position_[i], "%.2lf DegC [!]", temp);
-      ROS_WARN_STREAM(pos << ": " << raw_temp);
 
-    } else if (raw_temp > temp_hot_error_) {
+    } else if (temp > temp_hot_error_) {
       error = DiagStatus::ERROR;
       stat.addf(position_[i], "%.2lf DegC [x]", temp);
-      ROS_ERROR_STREAM(pos << ": " << raw_temp);
 
-    } else if (raw_temp > temp_hot_warn_) {
+    } else if (temp > temp_hot_warn_) {
       warn = DiagStatus::WARN;
       stat.addf(position_[i], "%.2lf DegC [!]", temp);
-      ROS_WARN_STREAM(pos << ": " << raw_temp);
 
     } else {
       stat.addf(position_[i], "%.2lf DegC", temp);
@@ -128,7 +122,6 @@ void PandarMonitor::checkPTP(diagnostic_updater::DiagnosticStatusWrapper & stat)
 {
   pandar_api::LidarStatus status;
   auto code = client_->getLidarStatus(status);
-  stat.add("return_code", (int)code); 
   if(code != pandar_api::TCPClient::ReturnCode::SUCCESS){
     stat.summary(DiagStatus::ERROR, "ERROR");
     return;
@@ -148,7 +141,6 @@ void PandarMonitor::checkGPSPPS(diagnostic_updater::DiagnosticStatusWrapper & st
   /* get LiDAR status*/
   pandar_api::LidarStatus status;
   auto code = client_->getLidarStatus(status);
-  stat.add("return_code", (int)code); 
   if (code == pandar_api::TCPClient::ReturnCode::SUCCESS)
   {
     if(status.gps_pps_lock == 0)
@@ -171,7 +163,6 @@ void PandarMonitor::checkGPSGPRMC(diagnostic_updater::DiagnosticStatusWrapper & 
   /* get LiDAR status*/
   pandar_api::LidarStatus status;
   auto code = client_->getLidarStatus(status);
-  stat.add("return_code", (int)code); 
   if (code == pandar_api::TCPClient::ReturnCode::SUCCESS)
   {
     if(status.gps_gprmc_status == 0)
