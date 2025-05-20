@@ -25,6 +25,39 @@
 #include <diagnostic_updater/diagnostic_updater.h>
 #include <pandar_api/tcp_client.hpp>
 
+
+class MovingAverage
+{
+public:
+  MovingAverage() {};
+
+  void setWindowSize(int window_size) {
+    window_size_ = window_size;
+    buff_ = std::vector<int>(window_size, 0); 
+  };
+  
+  int update(int &new_data) {
+    if (buff_idx_ >= window_size_) { buff_idx_ = 0; }
+
+    sum_ -= buff_[buff_idx_];
+    buff_[buff_idx_] = new_data;
+    sum_ += buff_[buff_idx_];
+
+    ave_ = sum_ / window_size_;
+
+    buff_idx_++;
+    return ave_;
+  }
+  
+protected:
+  int window_size_ = 0;
+  std::vector<int> buff_;
+  int buff_idx_ = 0;
+  int sum_ = 0;
+  float ave_ = 0;
+};
+
+
 class PandarMonitor
 {
 public:
@@ -70,6 +103,7 @@ protected:
   float rpm_ratio_warn_;
   float rpm_ratio_error_;
 
+  MovingAverage temp_list_[8];
 
   const std::map<int, const char *> rpm_dict_ = {
     {DiagStatus::OK, "OK"}, {DiagStatus::WARN, "RPM low"}, {DiagStatus::ERROR, "RPM too low"}};

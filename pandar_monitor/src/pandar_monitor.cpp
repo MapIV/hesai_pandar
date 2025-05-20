@@ -37,6 +37,10 @@ PandarMonitor::PandarMonitor()
 
   client_ = std::make_unique<pandar_api::TCPClient>(ip_address_, static_cast<int>(timeout_ * 1000));
 
+  for (MovingAverage& ave_temp: temp_list_) {
+    ave_temp.setWindowSize(10);
+  }
+
   updater_.setHardwareID("pandar");
 
   timer_ = pnh_.createTimer(ros::Rate(1.0), &PandarMonitor::onTimer, this);
@@ -61,7 +65,6 @@ void PandarMonitor::checkTemperature(diagnostic_updater::DiagnosticStatusWrapper
 {
   pandar_api::LidarStatus status;
   auto code = client_->getLidarStatus(status);
-
   if(code != pandar_api::TCPClient::ReturnCode::SUCCESS){
     stat.summary(DiagStatus::ERROR, "ERROR");
     return;
@@ -71,26 +74,28 @@ void PandarMonitor::checkTemperature(diagnostic_updater::DiagnosticStatusWrapper
   int warn = DiagStatus::OK;
 
   for(size_t i = 0; i < 8; ++i){
-    float temp = static_cast<float>(status.temp[i]) / 100.0f;
-    auto pos = position_[i];
+    float raw_temp = static_cast<float>(status.temp[i]) / 100.0f;
+    float temp = temp_list_[i].update(status.temp[i]); // unit: degC*100
+    temp = temp / 100.0f;
 
     // Check board temperature
+    auto pos = position_[i];
     if (temp < temp_cold_error_) {
       error = DiagStatus::ERROR;
       stat.addf(position_[i], "%.2lf DegC [x]", temp);
-      ROS_ERROR_STREAM(pos << ": " << temp);
+
     } else if (temp < temp_cold_warn_) {
       warn = DiagStatus::WARN;
       stat.addf(position_[i], "%.2lf DegC [!]", temp);
-      ROS_WARN_STREAM(pos << ": " << temp);
+
     } else if (temp > temp_hot_error_) {
       error = DiagStatus::ERROR;
       stat.addf(position_[i], "%.2lf DegC [x]", temp);
-      ROS_ERROR_STREAM(pos << ": " << temp);
+
     } else if (temp > temp_hot_warn_) {
       warn = DiagStatus::WARN;
       stat.addf(position_[i], "%.2lf DegC [!]", temp);
-      ROS_WARN_STREAM(pos << ": " << temp);
+
     } else {
       stat.addf(position_[i], "%.2lf DegC", temp);
     }
