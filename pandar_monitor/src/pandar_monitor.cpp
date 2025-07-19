@@ -52,13 +52,18 @@ void PandarMonitor::checkConnection(diagnostic_updater::DiagnosticStatusWrapper 
   auto code = client_->getInventoryInfo(info);
   if(code != pandar_api::TCPClient::ReturnCode::SUCCESS){
     stat.summary(DiagStatus::ERROR, "ERROR");
+    disconnect_ += 1;
+    if ( disconnect_ > timeout_ ) {
+      ROS_ERROR("Connection Timeout!");
+      exit(1);
+    }
     return;
   }
 
-  updater_.setHardwareIDf(
-    "%s: %s", info.model.c_str(), info.sn.c_str());
+  updater_.setHardwareIDf("%s: %s", info.model.c_str(), info.sn.c_str());
 
   stat.summary(DiagStatus::OK, "OK");
+  disconnect_ = 0;
 }
 
 void PandarMonitor::checkTemperature(diagnostic_updater::DiagnosticStatusWrapper & stat)
