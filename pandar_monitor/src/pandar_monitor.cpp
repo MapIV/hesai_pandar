@@ -55,7 +55,7 @@ void PandarMonitor::checkConnection(diagnostic_updater::DiagnosticStatusWrapper 
     disconnect_ += 1;
     if ( disconnect_ > timeout_ ) {
       ROS_ERROR("Connection Timeout!");
-      exit(1);
+      client_ = std::make_unique<pandar_api::TCPClient>(ip_address_, static_cast<int>(timeout_ * 1000));
     }
     return;
   }
@@ -68,6 +68,11 @@ void PandarMonitor::checkConnection(diagnostic_updater::DiagnosticStatusWrapper 
 
 void PandarMonitor::checkTemperature(diagnostic_updater::DiagnosticStatusWrapper & stat)
 {
+  if(disconnect_ > 0){
+    stat.summary(DiagStatus::ERROR, "Disconnected");
+    return;
+  }
+
   pandar_api::LidarStatus status;
   auto code = client_->getLidarStatus(status);
   if(code != pandar_api::TCPClient::ReturnCode::SUCCESS){
@@ -125,6 +130,11 @@ void PandarMonitor::checkTemperature(diagnostic_updater::DiagnosticStatusWrapper
 
 void PandarMonitor::checkPTP(diagnostic_updater::DiagnosticStatusWrapper & stat)
 {
+  if(disconnect_ > 0){
+    stat.summary(DiagStatus::ERROR, "Disconnected");
+    return;
+  }
+  
   pandar_api::LidarStatus status;
   auto code = client_->getLidarStatus(status);
   if(code != pandar_api::TCPClient::ReturnCode::SUCCESS){
@@ -143,6 +153,11 @@ void PandarMonitor::onTimer(const ros::TimerEvent & event) { updater_.force_upda
 
 void PandarMonitor::checkGPSPPS(diagnostic_updater::DiagnosticStatusWrapper & stat)
 {
+  if(disconnect_ > 0){
+    stat.summary(DiagStatus::ERROR, "Disconnected");
+    return;
+  }
+
   /* get LiDAR status*/
   pandar_api::LidarStatus status;
   auto code = client_->getLidarStatus(status);
@@ -165,6 +180,11 @@ void PandarMonitor::checkGPSPPS(diagnostic_updater::DiagnosticStatusWrapper & st
 
 void PandarMonitor::checkGPSGPRMC(diagnostic_updater::DiagnosticStatusWrapper & stat)
 {
+  if(disconnect_ > 0){
+    stat.summary(DiagStatus::ERROR, "Disconnected");
+    return;
+  }
+  
   /* get LiDAR status*/
   pandar_api::LidarStatus status;
   auto code = client_->getLidarStatus(status);
