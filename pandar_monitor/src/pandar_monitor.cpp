@@ -52,17 +52,27 @@ void PandarMonitor::checkConnection(diagnostic_updater::DiagnosticStatusWrapper 
   auto code = client_->getInventoryInfo(info);
   if(code != pandar_api::TCPClient::ReturnCode::SUCCESS){
     stat.summary(DiagStatus::ERROR, "ERROR");
+    disconnect_ += 1;
+    if ( disconnect_ > timeout_ ) {
+      ROS_ERROR("Connection Timeout!");
+      client_ = std::make_unique<pandar_api::TCPClient>(ip_address_, static_cast<int>(timeout_ * 1000));
+    }
     return;
   }
 
-  updater_.setHardwareIDf(
-    "%s: %s", info.model.c_str(), info.sn.c_str());
+  updater_.setHardwareIDf("%s: %s", info.model.c_str(), info.sn.c_str());
 
   stat.summary(DiagStatus::OK, "OK");
+  disconnect_ = 0;
 }
 
 void PandarMonitor::checkTemperature(diagnostic_updater::DiagnosticStatusWrapper & stat)
 {
+  if(disconnect_ > 0){
+    stat.summary(DiagStatus::OK, "Disconnected");
+    return;
+  }
+
   pandar_api::LidarStatus status;
   auto code = client_->getLidarStatus(status);
   if(code != pandar_api::TCPClient::ReturnCode::SUCCESS){
@@ -120,6 +130,11 @@ void PandarMonitor::checkTemperature(diagnostic_updater::DiagnosticStatusWrapper
 
 void PandarMonitor::checkPTP(diagnostic_updater::DiagnosticStatusWrapper & stat)
 {
+  if(disconnect_ > 0){
+    stat.summary(DiagStatus::OK, "Disconnected");
+    return;
+  }
+  
   pandar_api::LidarStatus status;
   auto code = client_->getLidarStatus(status);
   if(code != pandar_api::TCPClient::ReturnCode::SUCCESS){
@@ -138,6 +153,11 @@ void PandarMonitor::onTimer(const ros::TimerEvent & event) { updater_.force_upda
 
 void PandarMonitor::checkGPSPPS(diagnostic_updater::DiagnosticStatusWrapper & stat)
 {
+  if(disconnect_ > 0){
+    stat.summary(DiagStatus::OK, "Disconnected");
+    return;
+  }
+
   /* get LiDAR status*/
   pandar_api::LidarStatus status;
   auto code = client_->getLidarStatus(status);
@@ -160,6 +180,11 @@ void PandarMonitor::checkGPSPPS(diagnostic_updater::DiagnosticStatusWrapper & st
 
 void PandarMonitor::checkGPSGPRMC(diagnostic_updater::DiagnosticStatusWrapper & stat)
 {
+  if(disconnect_ > 0){
+    stat.summary(DiagStatus::OK, "Disconnected");
+    return;
+  }
+  
   /* get LiDAR status*/
   pandar_api::LidarStatus status;
   auto code = client_->getLidarStatus(status);

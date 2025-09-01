@@ -102,6 +102,7 @@ protected:
   float temp_hot_error_;
   float rpm_ratio_warn_;
   float rpm_ratio_error_;
+  int disconnect_ = 0;
 
   MovingAverage temp_list_[8];
 
