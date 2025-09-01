@@ -69,7 +69,7 @@ void PandarMonitor::checkConnection(diagnostic_updater::DiagnosticStatusWrapper 
 void PandarMonitor::checkTemperature(diagnostic_updater::DiagnosticStatusWrapper & stat)
 {
   if(disconnect_ > 0){
-    stat.summary(DiagStatus::ERROR, "Disconnected");
+    stat.summary(DiagStatus::OK, "Disconnected");
     return;
   }
 
@@ -131,7 +131,7 @@ void PandarMonitor::checkTemperature(diagnostic_updater::DiagnosticStatusWrapper
 void PandarMonitor::checkPTP(diagnostic_updater::DiagnosticStatusWrapper & stat)
 {
   if(disconnect_ > 0){
-    stat.summary(DiagStatus::ERROR, "Disconnected");
+    stat.summary(DiagStatus::OK, "Disconnected");
     return;
   }
   
@@ -154,7 +154,7 @@ void PandarMonitor::onTimer(const ros::TimerEvent & event) { updater_.force_upda
 void PandarMonitor::checkGPSPPS(diagnostic_updater::DiagnosticStatusWrapper & stat)
 {
   if(disconnect_ > 0){
-    stat.summary(DiagStatus::ERROR, "Disconnected");
+    stat.summary(DiagStatus::OK, "Disconnected");
     return;
   }
 
@@ -181,7 +181,7 @@ void PandarMonitor::checkGPSPPS(diagnostic_updater::DiagnosticStatusWrapper & st
 void PandarMonitor::checkGPSGPRMC(diagnostic_updater::DiagnosticStatusWrapper & stat)
 {
   if(disconnect_ > 0){
-    stat.summary(DiagStatus::ERROR, "Disconnected");
+    stat.summary(DiagStatus::OK, "Disconnected");
     return;
   }
   
