@@ -4,8 +4,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## v2.2.1
+
+### Fixed
+- センサとの接続が切れて再接続されても、pandar_monitorだけ再接続されない問題を対策
+
+
 ## v2.2.0
-https://github.com/MapIV/hesai_pandar/tree/v2.2.0
 
 ### Fixed
 - XT32/XT32Mを長時間使用すると定期的に誤った高温値が入力されてエラーが出る問題を対策（MID-5039）<br>
@@ -13,14 +18,12 @@ https://github.com/MapIV/hesai_pandar/tree/v2.2.0
 
 
 ## v1.3 (v2.1.3)
-https://github.com/MapIV/hesai_pandar/tree/v1.3
 
 ### Added
 - changelogを作成
 
 
 ## v1.2 (v2.1.2)
-https://github.com/MapIV/hesai_pandar/tree/v1.2
 
 ### Fixed
 - signed intの温度データをunsignedで受け取っている箇所を修正
@@ -29,13 +32,11 @@ https://github.com/MapIV/hesai_pandar/tree/v1.2
 
 
 ## v1.1 (v2.1.1)
-https://github.com/MapIV/hesai_pandar/tree/v1.1
 
 ### Fixed
 - 照射部分を隠すとドライバーが死ぬことがある不具合を修正
 
 
 ## v1.0 (v2.1.0)
-https://github.com/MapIV/hesai_pandar/tree/v1.0
 
 初回リリース
