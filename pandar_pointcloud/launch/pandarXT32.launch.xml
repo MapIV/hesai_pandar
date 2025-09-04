@@ -10,7 +10,7 @@
   <arg name="return_mode" default="Dual"/>
   <arg name="model" default="PandarXT-32"/>
   <arg name="frame_id" default="pandar"/>
-  <arg name="calibration" default="$(find-pkg-share pandar_pointcloud)/config/40p.csv"/>
+  <arg name="calibration" default="$(find-pkg-share pandar_pointcloud)/config/xt32.csv"/>
 
   <!-- pandar driver -->
   <node pkg="pandar_driver" exec="pandar_driver_node" name="pandar_driver" output="screen" >
