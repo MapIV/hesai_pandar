@@ -8,9 +8,9 @@
   <arg name="scan_phase"  default="0.0"/>
   <arg name="dual_return_distance_threshold" default="0.1"/>
   <arg name="return_mode" default="Dual"/>
-  <arg name="model" default="Pandar-XT32"/>
+  <arg name="model" default="PandarXT-32"/>
   <arg name="frame_id" default="pandar"/>
-  <arg name="calibration" default="$(find-pkg-share pandar_pointcloud)/config/40p.csv"/>
+  <arg name="calibration" default="$(find-pkg-share pandar_pointcloud)/config/xt32.csv"/>
 
   <!-- pandar driver -->
   <node pkg="pandar_driver" exec="pandar_driver_node" name="pandar_driver" output="screen" >
