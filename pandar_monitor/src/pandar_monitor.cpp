@@ -65,8 +65,27 @@ void PandarMonitor::checkTemperature(diagnostic_updater::DiagnosticStatusWrapper
 {
   pandar_api::LidarStatus status;
   auto code = client_->getLidarStatus(status);
-  if(code != pandar_api::TCPClient::ReturnCode::SUCCESS){
-    stat.summary(DiagStatus::ERROR, "ERROR");
+
+  if(code == pandar_api::TCPClient::ReturnCode::INVALID_INPUT){
+    stat.summary(DiagStatus::ERROR, "INVALID_INPUT");
+    return;
+  }else if(code == pandar_api::TCPClient::ReturnCode::CONNECTION_FAILED){
+    stat.summary(DiagStatus::ERROR, "CONNECTION_FAILED");
+    return;
+  }else if(code == pandar_api::TCPClient::ReturnCode::NO_VALID_DATA){
+    stat.summary(DiagStatus::ERROR, "NO_VALID_DATA");
+    return;
+  }else if(code == pandar_api::TCPClient::ReturnCode::NO_MEMORY){
+    stat.summary(DiagStatus::ERROR, "NO_MEMORY");
+    return;
+  }else if(code == pandar_api::TCPClient::ReturnCode::NO_SUPPORT){
+    stat.summary(DiagStatus::ERROR, "NO_SUPPORT");
+    return;
+  }else if(code == pandar_api::TCPClient::ReturnCode::FPGA_ERROR){
+    stat.summary(DiagStatus::ERROR, "FPGA_ERROR");
+    return;
+  }else if(code != pandar_api::TCPClient::ReturnCode::SUCCESS){
+    stat.summary(DiagStatus::ERROR, "UNKNOWN_ERROR");
     return;
   }
 
