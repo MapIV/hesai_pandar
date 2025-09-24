@@ -17,7 +17,6 @@
 
 #include "pandar_monitor/pandar_monitor.hpp"
 #include <boost/algorithm/string/join.hpp>
-#include <fmt/format.h>
 
 PandarMonitor::PandarMonitor()
 {
@@ -38,6 +37,10 @@ PandarMonitor::PandarMonitor()
 
   client_ = std::make_unique<pandar_api::TCPClient>(ip_address_, static_cast<int>(timeout_ * 1000));
 
+  for (MovingAverage& ave_temp: temp_list_) {
+    ave_temp.setWindowSize(10);
+  }
+
   updater_.setHardwareID("pandar");
 
   timer_ = pnh_.createTimer(ros::Rate(1.0), &PandarMonitor::onTimer, this);
@@ -49,20 +52,29 @@ void PandarMonitor::checkConnection(diagnostic_updater::DiagnosticStatusWrapper 
   auto code = client_->getInventoryInfo(info);
   if(code != pandar_api::TCPClient::ReturnCode::SUCCESS){
     stat.summary(DiagStatus::ERROR, "ERROR");
+    disconnect_ += 1;
+    if ( disconnect_ > timeout_ ) {
+      ROS_ERROR("Connection Timeout!");
+      client_ = std::make_unique<pandar_api::TCPClient>(ip_address_, static_cast<int>(timeout_ * 1000));
+    }
     return;
   }
 
-  updater_.setHardwareIDf(
-    "%s: %s", info.model.c_str(), info.sn.c_str());
+  updater_.setHardwareIDf("%s: %s", info.model.c_str(), info.sn.c_str());
 
   stat.summary(DiagStatus::OK, "OK");
+  disconnect_ = 0;
 }
 
 void PandarMonitor::checkTemperature(diagnostic_updater::DiagnosticStatusWrapper & stat)
 {
+  if(disconnect_ > 0){
+    stat.summary(DiagStatus::OK, "Disconnected");
+    return;
+  }
+
   pandar_api::LidarStatus status;
   auto code = client_->getLidarStatus(status);
-
   if(code != pandar_api::TCPClient::ReturnCode::SUCCESS){
     stat.summary(DiagStatus::ERROR, "ERROR");
     return;
@@ -70,35 +82,59 @@ void PandarMonitor::checkTemperature(diagnostic_updater::DiagnosticStatusWrapper
 
   int error = DiagStatus::OK;
   int warn = DiagStatus::OK;
-  std::vector<std::string> msg;  
 
   for(size_t i = 0; i < 8; ++i){
-    float temp = static_cast<float>(status.temp[i]) / 100.0f;
-    auto pos = position_[i];
-    stat.addf(position_[i], "%.2lf DegC", temp);
+    float raw_temp = static_cast<float>(status.temp[i]) / 100.0f;
+    float temp = temp_list_[i].update(status.temp[i]); // unit: degC*100
+    temp = temp / 100.0f;
 
     // Check board temperature
+    auto pos = position_[i];
     if (temp < temp_cold_error_) {
       error = DiagStatus::ERROR;
-      msg.emplace_back(fmt::format("{} temperature too cold", pos));
+      stat.addf(position_[i], "%.2lf DegC [x]", temp);
+
     } else if (temp < temp_cold_warn_) {
       warn = DiagStatus::WARN;
-      msg.emplace_back(fmt::format("{} temperature cold", pos));
+      stat.addf(position_[i], "%.2lf DegC [!]", temp);
+
     } else if (temp > temp_hot_error_) {
       error = DiagStatus::ERROR;
-      msg.emplace_back(fmt::format("{} temperature too hot", pos));
+      stat.addf(position_[i], "%.2lf DegC [x]", temp);
+
     } else if (temp > temp_hot_warn_) {
       warn = DiagStatus::WARN;
-      msg.emplace_back(fmt::format("{} temperature hot", pos));
+      stat.addf(position_[i], "%.2lf DegC [!]", temp);
+
+    } else {
+      stat.addf(position_[i], "%.2lf DegC", temp);
     }
   }
 
-  if (msg.empty()) msg.emplace_back("OK");
-  stat.summary(std::max(error, warn), boost::algorithm::join(msg, ", "));
+  stat.add("threshold_cold_error", temp_cold_error_);
+  stat.add("threshold_cold_warn",  temp_cold_warn_);
+  stat.add("threshold_hot_warn",   temp_hot_warn_);
+  stat.add("threshold_hot_error",  temp_hot_error_);
+
+  std::string msg;
+  if (error == DiagStatus::ERROR) {
+    msg = "ERROR";
+  } else if (warn == DiagStatus::WARN) {
+    msg = "WARN";
+  } else {
+    msg = "OK";
+  }
+
+  stat.summary(std::max(error, warn), msg);
 }
 
 void PandarMonitor::checkPTP(diagnostic_updater::DiagnosticStatusWrapper & stat)
 {
+  if(disconnect_ > 0){
+    stat.summary(DiagStatus::OK, "Disconnected");
+    return;
+  }
+  
   pandar_api::LidarStatus status;
   auto code = client_->getLidarStatus(status);
   if(code != pandar_api::TCPClient::ReturnCode::SUCCESS){
@@ -117,6 +153,11 @@ void PandarMonitor::onTimer(const ros::TimerEvent & event) { updater_.force_upda
 
 void PandarMonitor::checkGPSPPS(diagnostic_updater::DiagnosticStatusWrapper & stat)
 {
+  if(disconnect_ > 0){
+    stat.summary(DiagStatus::OK, "Disconnected");
+    return;
+  }
+
   /* get LiDAR status*/
   pandar_api::LidarStatus status;
   auto code = client_->getLidarStatus(status);
@@ -139,6 +180,11 @@ void PandarMonitor::checkGPSPPS(diagnostic_updater::DiagnosticStatusWrapper & st
 
 void PandarMonitor::checkGPSGPRMC(diagnostic_updater::DiagnosticStatusWrapper & stat)
 {
+  if(disconnect_ > 0){
+    stat.summary(DiagStatus::OK, "Disconnected");
+    return;
+  }
+  
   /* get LiDAR status*/
   pandar_api::LidarStatus status;
   auto code = client_->getLidarStatus(status);

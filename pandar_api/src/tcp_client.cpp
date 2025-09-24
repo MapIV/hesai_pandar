@@ -13,8 +13,12 @@ namespace{
     return htobe64(*((int64_t*)raw)); 
   }
 
-  inline uint32_t parse32(uint8_t* raw){
+  inline uint32_t parseu32(uint8_t* raw){
     return htobe32(*((uint32_t*)raw)); 
+  }
+
+  inline int32_t parse32(uint8_t* raw){
+    return htobe32(*((int32_t*)raw)); 
   }
 
   inline uint16_t parse16(uint8_t* raw){
@@ -136,9 +140,10 @@ TCPClient::ReturnCode TCPClient::getLidarStatus(LidarStatus& status)
   payload_.clear();
   connect();
   if(return_code_ == ReturnCode::SUCCESS){
+    // memcpy(&status, payload_.data(), sizeof(LidarStatus));
+    
     uint8_t* it = payload_.data();
-
-    status.uptime = parse32(it);
+    status.uptime = parseu32(it);
     it += 4;
     status.motor_speed = parse16(it);
     it += 2;
@@ -153,10 +158,10 @@ TCPClient::ReturnCode TCPClient::getLidarStatus(LidarStatus& status)
     status.gps_gprmc_status = *it;
     it+=1;
 
-    status.startup_times = parse32(it);
+    status.startup_times = parseu32(it);
     it += 4;
     
-    status.total_operation_time = parse32(it);
+    status.total_operation_time = parseu32(it);
     it += 4;
     
     status.ptp_clock_status = *it;
@@ -180,9 +185,9 @@ TCPClient::ReturnCode TCPClient::getPTPDiagnostics(PTPDiag& diag)
     uint8_t* it = payload_.data();
     diag.master_offset = parse64(it);
     it += 8;
-    uint32_t test = parse32(it);
+    uint32_t test = parseu32(it);
     it += 4;
-    diag.elapsed_millisec = parse32(it);
+    diag.elapsed_millisec = parseu32(it);
     it += 4;
     std::cout << diag.master_offset << std::endl;
     std::cout << test << std::endl;
