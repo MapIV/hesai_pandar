@@ -3,9 +3,11 @@ project(pandar_driver)
 
 add_compile_options(-std=c++14)
 
+include(cmake/FindPCAP.cmake)
 
 find_package(catkin REQUIRED COMPONENTS
   roscpp
+  rosbag
   roslib
   nodelet
   pluginlib
@@ -60,6 +62,18 @@ target_link_libraries(pandar_driver_nodelet
   ${catkin_LIBRARIES}
 )
 
+## pcap
+add_executable(pcap2rosbag_converter
+  src/driver/pcap2rosbag_converter.cpp
+)
+target_include_directories(pcap2rosbag_converter PRIVATE
+  ${PCAP_INCLUDE_DIR}
+)
+target_link_libraries(pcap2rosbag_converter
+  ${PCAP_LIBRARY}
+  ${catkin_LIBRARIES}
+)
+
 
 # Install
 ## executables and libraries
@@ -68,6 +82,7 @@ install(
     pandar_driver_node
     pandar_driver_nodelet
     pandar_input
+    pcap2rosbag_converter
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
