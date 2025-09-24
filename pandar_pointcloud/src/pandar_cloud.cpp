@@ -1,5 +1,5 @@
 #include "pandar_pointcloud/pandar_cloud.hpp"
-#include <pandar_msgs/PandarScan.h>
+#include <pandar_msgs/PandarScan2.h>
 #include "pandar_pointcloud/calibration.hpp"
 #include "pandar_pointcloud/decoder/pandar40_decoder.hpp"
 #include "pandar_pointcloud/decoder/pandar_qt_decoder.hpp"
@@ -29,6 +29,7 @@ PandarCloud::PandarCloud(ros::NodeHandle node, ros::NodeHandle private_nh)
   private_nh.getParam("calibration", calibration_path_);
   private_nh.getParam("model", model_);
   private_nh.getParam("device_ip", device_ip_);
+  use_variable_length_packet_ = private_nh.param<bool>("use_variable_length_packet", true);
 
   tcp_client_ = std::make_shared<pandar_api::TCPClient>(device_ip_);
   if (!setupCalibration()) {
@@ -167,8 +168,17 @@ PandarCloud::PandarCloud(ros::NodeHandle node, ros::NodeHandle private_nh)
     return;
   }
 
-  pandar_packet_sub_ =
+  if (use_variable_length_packet_)
+  {
+    pandar_packet_sub_ =
+      node.subscribe("pandar_packets", 10, &PandarCloud::onProcessScan2, this, ros::TransportHints().tcpNoDelay(true));
+  }
+  else
+  {
+    pandar_packet_sub_ =
       node.subscribe("pandar_packets", 10, &PandarCloud::onProcessScan, this, ros::TransportHints().tcpNoDelay(true));
+  }
+
   pandar_points_pub_ = node.advertise<sensor_msgs::PointCloud2>("pandar_points", 10);
   pandar_points_ex_pub_ = node.advertise<sensor_msgs::PointCloud2>("pandar_points_ex", 10);
   ROS_INFO_STREAM("Ready");
@@ -212,6 +222,31 @@ void PandarCloud::onProcessScan(const pandar_msgs::PandarScan::ConstPtr& scan_ms
 {
   PointcloudXYZIRADT pointcloud;
   pandar_msgs::PandarPacket pkt;
+
+  for (auto& packet : scan_msg->packets) {
+    decoder_->unpack(packet);
+    if (decoder_->hasScanned()) {
+      pointcloud = decoder_->getPointcloud();
+      if (pointcloud->points.size() > 0 
+          && (pointcloud->points[0].time_stamp < PandarCloud::MAX_ROS_TIME)
+        ) {
+        pointcloud->header.stamp = pcl_conversions::toPCL(ros::Time(pointcloud->points[0].time_stamp));
+        pointcloud->header.frame_id = scan_msg->header.frame_id;
+        pointcloud->height = 1;
+
+        pandar_points_ex_pub_.publish(pointcloud);
+        if (pandar_points_pub_.getNumSubscribers() > 0) {
+          pandar_points_pub_.publish(convertPointcloud(pointcloud));
+        }
+      }
+    }
+  }
+}
+
+void PandarCloud::onProcessScan2(const pandar_msgs::PandarScan2::ConstPtr& scan_msg)
+{
+  PointcloudXYZIRADT pointcloud;
+  pandar_msgs::PandarPacket2 pkt;
 
   for (auto& packet : scan_msg->packets) {
     decoder_->unpack(packet);

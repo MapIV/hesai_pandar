@@ -67,7 +67,52 @@ bool Pandar128E4XDecoder::parsePacket(const pandar_msgs::PandarPacket& raw_packe
   return false;
 }
 
+bool Pandar128E4XDecoder::parsePacket(const pandar_msgs::PandarPacket2& raw_packet)
+{
+  if (raw_packet.size != sizeof(Packet)) {
+    std::cerr << "Packet size mismatch:" << raw_packet.size
+              << "| Expected:" << sizeof(Packet) << std::endl;
+    return false;
+  }
+  if (std::memcpy(&packet_, raw_packet.data.data(), sizeof(Packet))) {
+    return true;
+  }
+  std::cerr << "Invalid SOF " << std::hex << packet_.header.SOP << " Packet" << std::endl;
+  return false;
+}
+
 void Pandar128E4XDecoder::unpack(const pandar_msgs::PandarPacket& raw_packet)
+{
+  if (!parsePacket(raw_packet)) {
+    return;
+  }
+  if (has_scanned_) {
+    scan_pc_ = overflow_pc_;
+    overflow_pc_.reset(new pcl::PointCloud<PointXYZIRADT>);
+    overflow_pc_->reserve(LASER_COUNT*MAX_AZIMUTH_STEPS);
+    has_scanned_ = false;
+  }
+
+  bool dual_return = false;
+  if (packet_.tail.return_mode == DUAL_LAST_STRONGEST_RETURN
+      || packet_.tail.return_mode == DUAL_LAST_FIRST_RETURN
+      || packet_.tail.return_mode == DUAL_FIRST_STRONGEST_RETURN) {
+    dual_return = true;
+  }
+
+  auto block_pc = convert();
+  int current_phase =
+      (static_cast<int>(packet_.body.azimuth_1) - scan_phase_ + 36000) % 36000;
+  if (current_phase > last_phase_ && !has_scanned_) {
+    *scan_pc_ += *block_pc;
+  } else {
+    *overflow_pc_ += *block_pc;
+    has_scanned_ = true;
+  }
+  last_phase_ = current_phase;
+}
+
+void Pandar128E4XDecoder::unpack(const pandar_msgs::PandarPacket2& raw_packet)
 {
   if (!parsePacket(raw_packet)) {
     return;

@@ -30,12 +30,15 @@ public:
 
   PandarQTDecoder(Calibration& calibration, float scan_phase = 0.0f, double dual_return_distance_threshold = 0.1, ReturnMode return_mode = ReturnMode::DUAL);
   void unpack(const pandar_msgs::PandarPacket& raw_packet) override;
+  void unpack(const pandar_msgs::PandarPacket2& raw_packet) override;
   PointXYZIRADT build_point(int block_id, int unit_id, uint8_t return_type);
   bool hasScanned() override;
   PointcloudXYZIRADT getPointcloud() override;
 
 private:
   bool parsePacket(const pandar_msgs::PandarPacket& raw_packet);
+  bool parsePacket(const pandar_msgs::PandarPacket2& raw_packet);
+  bool parseBinary(const uint8_t* buf);
   PointcloudXYZIRADT convert(const int block_id);
   PointcloudXYZIRADT convert_dual(const int block_id);
 

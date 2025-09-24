@@ -37,11 +37,14 @@ public:
                       double dual_return_distance_threshold = 0.1,
                       ReturnMode return_mode = ReturnMode::DUAL);
   void unpack(const pandar_msgs::PandarPacket& raw_packet) override;
+  void unpack(const pandar_msgs::PandarPacket2& raw_packet) override;
   bool hasScanned() override;
   PointcloudXYZIRADT getPointcloud() override;
 
 private:
   bool parsePacket(const pandar_msgs::PandarPacket& raw_packet);
+  bool parsePacket(const pandar_msgs::PandarPacket2& raw_packet);
+  bool parseBinary(const uint8_t* buf);
   PointXYZIRADT build_point(const Block& block,
                             const size_t& laser_id,
                             const uint16_t& azimuth,

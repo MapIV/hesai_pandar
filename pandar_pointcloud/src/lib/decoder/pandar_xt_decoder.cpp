@@ -83,6 +83,36 @@ void PandarXTDecoder::unpack(const pandar_msgs::PandarPacket& raw_packet)
   return;
 }
 
+void PandarXTDecoder::unpack(const pandar_msgs::PandarPacket2& raw_packet)
+{
+  if (!parsePacket(raw_packet)) {
+    return;
+  }
+
+  if (has_scanned_) {
+    scan_pc_ = overflow_pc_;
+    overflow_pc_.reset(new pcl::PointCloud<PointXYZIRADT>);
+    has_scanned_ = false;
+  }
+
+  bool dual_return = (packet_.return_mode != FIRST_RETURN && packet_.return_mode != STRONGEST_RETURN && packet_.return_mode != LAST_RETURN);
+  auto step = dual_return ? 2 : 1;
+
+  for (int block_id = 0; block_id < BLOCK_NUM; block_id += step) {
+    auto block_pc = dual_return ? convert_dual(block_id) : convert(block_id);
+    int current_phase = (static_cast<int>(packet_.blocks[block_id].azimuth) - scan_phase_ + 36000) % 36000;
+    if (current_phase > last_phase_ && !has_scanned_) {
+      *scan_pc_ += *block_pc;
+    }
+    else {
+      *overflow_pc_ += *block_pc;
+      has_scanned_ = true;
+    }
+    last_phase_ = current_phase;
+  }
+  return;
+}
+
 PointcloudXYZIRADT PandarXTDecoder::convert(const int block_id)
 {
   PointcloudXYZIRADT block_pc(new pcl::PointCloud<PointXYZIRADT>);
@@ -169,6 +199,21 @@ bool PandarXTDecoder::parsePacket(const pandar_msgs::PandarPacket& raw_packet)
   }
   const uint8_t* buf = &raw_packet.data[0];
 
+  return parseBinary(buf);
+}
+
+bool PandarXTDecoder::parsePacket(const pandar_msgs::PandarPacket2& raw_packet)
+{
+  if (raw_packet.size != PACKET_SIZE) {
+    return false;
+  }
+  const uint8_t* buf = &raw_packet.data[0];
+
+  return parseBinary(buf);
+}
+
+bool PandarXTDecoder::parseBinary(const uint8_t* buf)
+{
   size_t index = 0;
   // Parse 12 Bytes Header
   packet_.header.sob = (buf[index] & 0xff) << 8 | ((buf[index + 1] & 0xff));

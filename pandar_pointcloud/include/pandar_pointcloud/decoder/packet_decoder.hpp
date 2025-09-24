@@ -1,6 +1,7 @@
 #pragma once
 
 #include <pandar_msgs/PandarPacket.h>
+#include <pandar_msgs/PandarPacket2.h>
 #include <fstream>
 #include <vector>
 #include "pandar_pointcloud/point_types.hpp"
@@ -12,6 +13,7 @@ class PacketDecoder
 public:
   virtual ~PacketDecoder(){};
   virtual void unpack(const pandar_msgs::PandarPacket& raw_packet) = 0;
+  virtual void unpack(const pandar_msgs::PandarPacket2& raw_packet) = 0;
 
   // TODO: Remove this function
   // In Hesai's original driver, the decoder controls how many packets are used, but now the pandar_driver controls it.

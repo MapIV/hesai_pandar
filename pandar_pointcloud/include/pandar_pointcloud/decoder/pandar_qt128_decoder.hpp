@@ -29,19 +29,22 @@ public:
   };
 
   PandarQT128Decoder(Calibration& calibration, float scan_phase = 0.0f, double dual_return_distance_threshold = 0.1, ReturnMode return_mode = ReturnMode::DUAL);
-  /// @brief Parsing and shaping PandarPacket
+  /// @brief Parsing and shaping PandarPacket2
   /// @param pandar_packet
-  void unpack(const pandar_msgs::PandarPacket & raw_packet);
+  void unpack(const pandar_msgs::PandarPacket& raw_packet);
+  void unpack(const pandar_msgs::PandarPacket2& raw_packet);
   /// @brief Get the flag indicating whether one cycle is ready
   /// @return Readied
   bool hasScanned() override;
   PointcloudXYZIRADT getPointcloud() override;
 
 private:
-  /// @brief Parsing PandarPacket based on packet structure
+  /// @brief Parsing PandarPacket2 based on packet structure
   /// @param pandar_packet
   /// @return Resulting flag
-  bool parsePacket(const pandar_msgs::PandarPacket & pandar_packet);
+  bool parsePacket(const pandar_msgs::PandarPacket& pandar_packet);
+  bool parsePacket(const pandar_msgs::PandarPacket2& pandar_packet);
+  bool parseBinary(const uint8_t * buf);
   /// @brief Constructing a point cloud of the target part
   /// @param block_id Target block
   /// @param unit_id Target unit

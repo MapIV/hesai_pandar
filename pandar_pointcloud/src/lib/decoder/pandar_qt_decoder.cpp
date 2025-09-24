@@ -95,6 +95,43 @@ void PandarQTDecoder::unpack(const pandar_msgs::PandarPacket& raw_packet)
   return;
 }
 
+void PandarQTDecoder::unpack(const pandar_msgs::PandarPacket2& raw_packet)
+{
+  if (!parsePacket(raw_packet)) {
+    return;
+  }
+
+  if (has_scanned_) {
+    scan_pc_ = overflow_pc_;
+    overflow_pc_.reset(new pcl::PointCloud<PointXYZIRADT>);
+    has_scanned_ = false;
+  }
+
+  bool dual_return = (packet_.return_mode == DUAL_RETURN);
+  auto step = dual_return ? 2 : 1;
+
+  if (!dual_return) {
+    if ((packet_.return_mode == FIRST_RETURN && return_mode_ != ReturnMode::FIRST) || 
+        (packet_.return_mode == LAST_RETURN && return_mode_ != ReturnMode::LAST)) {
+      ROS_WARN ("Sensor return mode configuration does not match requested return mode");
+    }
+  }
+
+  for (int block_id = 0; block_id < BLOCK_NUM; block_id += step) {
+    auto block_pc = dual_return ? convert_dual(block_id) : convert(block_id);
+    int current_phase = (static_cast<int>(packet_.blocks[block_id].azimuth) - scan_phase_ + 36000) % 36000;
+    if (current_phase > last_phase_ && !has_scanned_) {
+      *scan_pc_ += *block_pc;
+    }
+    else {
+      *overflow_pc_ += *block_pc;
+      has_scanned_ = true;
+    }
+    last_phase_ = current_phase;
+  }
+  return;
+}
+
 PointXYZIRADT PandarQTDecoder::build_point(int block_id, int unit_id, uint8_t return_type)
 {
   const auto& block = packet_.blocks[block_id];
@@ -195,6 +232,21 @@ bool PandarQTDecoder::parsePacket(const pandar_msgs::PandarPacket& raw_packet)
   }
   const uint8_t* buf = &raw_packet.data[0];
 
+  return parseBinary(buf);
+}
+
+bool PandarQTDecoder::parsePacket(const pandar_msgs::PandarPacket2& raw_packet)
+{
+  if (raw_packet.size != PACKET_SIZE && raw_packet.size != PACKET_WITHOUT_UDPSEQ_SIZE) {
+    return false;
+  }
+  const uint8_t* buf = &raw_packet.data[0];
+
+  return parseBinary(buf);
+}
+
+bool PandarQTDecoder::parseBinary(const uint8_t* buf)
+{
   size_t index = 0;
   // Parse 12 Bytes Header
   packet_.header.sob = (buf[index] & 0xff) << 8 | ((buf[index + 1] & 0xff));

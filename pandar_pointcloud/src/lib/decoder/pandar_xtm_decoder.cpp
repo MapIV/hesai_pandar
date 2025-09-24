@@ -85,6 +85,43 @@ void PandarXTMDecoder::unpack(const pandar_msgs::PandarPacket& raw_packet)
   }
 }
 
+void PandarXTMDecoder::unpack(const pandar_msgs::PandarPacket2& raw_packet)
+{
+  if (!parsePacket(raw_packet)) {
+    return;
+  }
+  if (has_scanned_) {
+    scan_pc_ = overflow_pc_;
+    overflow_pc_.reset(new pcl::PointCloud<PointXYZIRADT>);
+    has_scanned_ = false;
+  }
+  for (int block_id = 0; block_id < packet_.header.chBlockNumber; ++block_id) {
+    int azimuthGap = 0; /* To do */
+    double timestampGap = 0; /* To do */
+    if(last_azimuth_ > packet_.blocks[block_id].azimuth) {
+      azimuthGap = static_cast<int>(packet_.blocks[block_id].azimuth) + (36000 - static_cast<int>(last_azimuth_));
+    } else {
+      azimuthGap = static_cast<int>(packet_.blocks[block_id].azimuth) - static_cast<int>(last_azimuth_);
+    }
+    timestampGap = packet_.usec - last_timestamp_ + 0.001;
+    if (last_azimuth_ != packet_.blocks[block_id].azimuth && \
+            (azimuthGap / timestampGap) < 36000 * 100 ) {
+      /* for all the blocks */
+      if ((last_azimuth_ > packet_.blocks[block_id].azimuth &&
+           start_angle_ <= packet_.blocks[block_id].azimuth) ||
+          (last_azimuth_ < start_angle_ &&
+           start_angle_ <= packet_.blocks[block_id].azimuth)) {
+          has_scanned_ = true;
+      }
+    } else {
+      //printf("last_azimuth_:%d pkt.blocks[block_id].azimuth:%d  *******azimuthGap:%d\n", last_azimuth_, pkt.blocks[block_id].azimuth, azimuthGap);
+    }
+    CalcXTPointXYZIT(block_id, packet_.header.chLaserNumber, scan_pc_);
+    last_azimuth_ = packet_.blocks[block_id].azimuth;
+    last_timestamp_ = packet_.usec;
+  }
+}
+
 void PandarXTMDecoder::CalcXTPointXYZIT(int blockid, \
     char chLaserNumber, boost::shared_ptr<pcl::PointCloud<PointXYZIRADT>> cld) {
   Block *block = &packet_.blocks[blockid];
@@ -148,6 +185,21 @@ bool PandarXTMDecoder::parsePacket(const pandar_msgs::PandarPacket& raw_packet)
   }
   const uint8_t* buf = &raw_packet.data[0];
 
+  return parseBinary(buf);
+}
+
+bool PandarXTMDecoder::parsePacket(const pandar_msgs::PandarPacket2& raw_packet)
+{
+  if (raw_packet.size != PACKET_SIZE) {
+    return false;
+  }
+  const uint8_t* buf = &raw_packet.data[0];
+
+  return parseBinary(buf);
+}
+
+bool PandarXTMDecoder::parseBinary(const uint8_t* buf)
+{
   size_t index = 0;
   // Parse 12 Bytes Header
   packet_.header.sob = (buf[index] & 0xff) << 8 | ((buf[index + 1] & 0xff));

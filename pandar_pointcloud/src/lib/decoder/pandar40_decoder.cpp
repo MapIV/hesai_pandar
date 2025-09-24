@@ -95,6 +95,44 @@ void Pandar40Decoder::unpack(const pandar_msgs::PandarPacket& raw_packet)
   return;
 }
 
+void Pandar40Decoder::unpack(const pandar_msgs::PandarPacket2& raw_packet)
+{
+  if (!parsePacket(raw_packet)) {
+    return;
+  }
+
+  if (has_scanned_) {
+    scan_pc_ = overflow_pc_;
+    overflow_pc_.reset(new pcl::PointCloud<PointXYZIRADT>);
+    has_scanned_ = false;
+  }
+
+  bool dual_return = (packet_.return_mode == DUAL_RETURN);
+
+  if (!dual_return) {
+    if ((packet_.return_mode == STRONGEST_RETURN && return_mode_ != ReturnMode::STRONGEST) || 
+        (packet_.return_mode == LAST_RETURN && return_mode_ != ReturnMode::LAST)) {
+      ROS_WARN ("Sensor return mode configuration does not match requested return mode");
+    }
+  }
+
+  auto step = dual_return ? 2 : 1;
+
+  for (int block_id = 0; block_id < BLOCKS_PER_PACKET; block_id += step) {
+    auto block_pc = dual_return ? convert_dual(block_id) : convert(block_id);
+    int current_phase = (static_cast<int>(packet_.blocks[block_id].azimuth) - scan_phase_ + 36000) % 36000;
+    if (current_phase > last_phase_ && !has_scanned_) {
+      *scan_pc_ += *block_pc;
+    }
+    else {
+      *overflow_pc_ += *block_pc;
+      has_scanned_ = true;
+    }
+    last_phase_ = current_phase;
+  }
+  return;
+}
+
 PointXYZIRADT Pandar40Decoder::build_point(int block_id, int unit_id, uint8_t return_type)
 {
   const auto& block = packet_.blocks[block_id];
@@ -207,6 +245,24 @@ bool Pandar40Decoder::parsePacket(const pandar_msgs::PandarPacket& raw_packet)
   // auto buf = raw_packet.data;
   const uint8_t* buf = &raw_packet.data[0];
 
+  return parseBinary(buf);
+}
+
+bool Pandar40Decoder::parsePacket(const pandar_msgs::PandarPacket2& raw_packet)
+{
+  if (raw_packet.size != PACKET_SIZE && raw_packet.size != PACKET_SIZE + SEQ_NUM_SIZE) {
+    // packet size mismatch !
+    return false;
+  }
+
+  // auto buf = raw_packet.data;
+  const uint8_t* buf = &raw_packet.data[0];
+
+  return parseBinary(buf);
+}
+
+bool Pandar40Decoder::parseBinary(const uint8_t* buf)
+{
   int index = 0;
   for (int i = 0; i < BLOCKS_PER_PACKET; i++) {
     Block& block = packet_.blocks[i];

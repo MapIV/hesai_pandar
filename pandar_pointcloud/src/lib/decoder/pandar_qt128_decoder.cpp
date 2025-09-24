@@ -151,6 +151,81 @@ void PandarQT128Decoder::unpack(const pandar_msgs::PandarPacket& raw_packet)
   last_phase_ = current_phase;
 }
 
+void PandarQT128Decoder::unpack(const pandar_msgs::PandarPacket2& raw_packet)
+{
+  if (!parsePacket(raw_packet)) {
+    return;
+  }
+
+  if (has_scanned_) {
+    scan_pc_ = overflow_pc_;
+    overflow_pc_.reset(new pcl::PointCloud<PointXYZIRADT>);
+    overflow_pc_->reserve(LASER_COUNT * MAX_AZIMUTH_STEPS);
+    has_scanned_ = false;
+  }
+
+  bool dual_return = is_dual_return();
+  auto unix_second = static_cast<double>(timegm(&packet_.t));  // sensor-time (ppt/gps)
+
+  PointcloudXYZIRADT block_pc(new pcl::PointCloud<PointXYZIRADT>);
+  int current_phase;
+  int cnt2;
+  bool accumulating;
+  if (dual_return) {
+    for (size_t block_id = 0; block_id < BLOCKS_PER_PACKET; block_id += 2) {
+      current_phase =
+        (static_cast<int>(packet_.blocks[block_id + 1].azimuth - scan_phase_ + 36000)) % 36000;
+      if (current_phase > last_phase_ && !has_scanned_) {
+        accumulating = true;
+      }
+      else {
+        scan_timestamp_ = unix_second + static_cast<double>(packet_.usec) / 1000000.;
+        accumulating = false;
+      }
+      auto block1_pt = convert(block_id);
+      auto block2_pt = convert(block_id + 1);
+      size_t block1size = block1_pt->points.size();
+      cnt2 = 0;
+      for (size_t i = 0; i < block1size; i++) {
+        if (
+          fabsf(
+            packet_.blocks[block_id + 1].units[i].distance -
+            packet_.blocks[block_id].units[i].distance) > dual_return_distance_threshold_) {
+          block_pc->points.emplace_back(block1_pt->points[i]);
+          block_pc->points.emplace_back(block2_pt->points[i]);
+          cnt2++;
+        } else {
+          block1_pt->points[i].return_type = DUAL_ONLY;
+          block_pc->points.emplace_back(block1_pt->points[i]);
+        }
+      }
+
+    }
+  } else  // single
+  {
+    for (size_t block_id = 0; block_id < BLOCKS_PER_PACKET; block_id++) {
+      current_phase =
+        static_cast<int>(packet_.blocks[block_id].azimuth - scan_phase_ + 36000) % 36000;
+      if (current_phase > last_phase_ && !has_scanned_) {
+        accumulating = true;
+      }
+      else {
+        scan_timestamp_ = unix_second + static_cast<double>(packet_.usec) / 1000000.;
+        accumulating = false;
+      }
+      block_pc = convert(block_id);
+      *block_pc += *block_pc;
+    }
+  }
+  if (accumulating) {
+    *scan_pc_ += *block_pc;
+  } else {
+    *overflow_pc_ += *block_pc;
+    has_scanned_ = true;
+  }
+  last_phase_ = current_phase;
+}
+
 PointXYZIRADT PandarQT128Decoder::build_point(
     size_t block_id, size_t unit_id, bool dual_return, const double & unix_second) {
   const auto &block = packet_.blocks[block_id];
@@ -217,6 +292,21 @@ bool PandarQT128Decoder::parsePacket(const pandar_msgs::PandarPacket& pandar_pac
   }
   const uint8_t * buf = &pandar_packet.data[0];
 
+  return parseBinary(buf);
+}
+
+bool PandarQT128Decoder::parsePacket(const pandar_msgs::PandarPacket2& pandar_packet)
+{
+  if (pandar_packet.size != PACKET_SIZE && pandar_packet.size != PACKET_WITHOUT_UDP_SEQ_CRC_SIZE) {
+    return false;
+  }
+  const uint8_t * buf = &pandar_packet.data[0];
+
+  return parseBinary(buf);
+}
+
+bool PandarQT128Decoder::parseBinary(const uint8_t * buf)
+{
   int index = 0;
   // Parse 12 Bytes Header
   packet_.header.sob = (buf[index] & 0xff) << 8 | ((buf[index + 1] & 0xff));

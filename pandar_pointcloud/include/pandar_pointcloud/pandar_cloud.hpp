@@ -2,6 +2,7 @@
 
 #include <ros/ros.h>
 #include <pandar_msgs/PandarScan.h>
+#include <pandar_msgs/PandarScan2.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <pandar_api/tcp_client.hpp>
 #include "pandar_pointcloud/calibration.hpp"
@@ -22,6 +23,7 @@ public:
 private:
   bool setupCalibration();
   void onProcessScan(const pandar_msgs::PandarScan::ConstPtr& msg);
+  void onProcessScan2(const pandar_msgs::PandarScan2::ConstPtr& msg);
   pcl::PointCloud<PointXYZIR>::Ptr convertPointcloud(const pcl::PointCloud<PointXYZIRADT>::ConstPtr& input_pointcloud);
 
   std::string model_;
@@ -30,6 +32,7 @@ private:
   std::string calibration_path_;
   double dual_return_distance_threshold_;
   double scan_phase_;
+  bool use_variable_length_packet_ = true;
 
   ros::Subscriber pandar_packet_sub_;
   ros::Publisher pandar_points_pub_;

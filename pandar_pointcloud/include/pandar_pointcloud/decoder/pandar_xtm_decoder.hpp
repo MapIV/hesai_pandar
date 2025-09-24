@@ -30,8 +30,6 @@ namespace pandar_xtm
     5.632f - 50.0f * 1.0f,
     5.632f - 50.0f * 0.0f,
     5.632f - 50.0f * 0.0f,
-    5.632f - 50.0f * 0.0f,
-    5.632f - 50.0f * 0.0f,
     5.632f - 50.0f * 0.0f
   };
 
@@ -41,8 +39,6 @@ namespace pandar_xtm
     5.632f - 50.0f * 1.0f,
     5.632f - 50.0f * 1.0f,
     5.632f - 50.0f * 0.0f,
-    5.632f - 50.0f * 0.0f,
-    5.632f - 50.0f * 0.0f,
     5.632f - 50.0f * 0.0f
   };
   const float blockXTMOffsetSingle[] = {
@@ -51,8 +47,6 @@ namespace pandar_xtm
     5.632f - 50.0f * 3.0f,
     5.632f - 50.0f * 2.0f,
     5.632f - 50.0f * 1.0f,
-    5.632f - 50.0f * 0.0f,
-    5.632f - 50.0f * 0.0f,
     5.632f - 50.0f * 0.0f
   };
 
@@ -110,11 +104,14 @@ public:
 
   PandarXTMDecoder(Calibration& calibration, float scan_phase = 0.0f, double dual_return_distance_threshold = 0.1, ReturnMode return_mode = ReturnMode::DUAL);
   void unpack(const pandar_msgs::PandarPacket& raw_packet) override;
+  void unpack(const pandar_msgs::PandarPacket2& raw_packet) override;
   bool hasScanned() override;
   PointcloudXYZIRADT getPointcloud() override;
 
 private:
   bool parsePacket(const pandar_msgs::PandarPacket& raw_packet);
+  bool parsePacket(const pandar_msgs::PandarPacket2& raw_packet);
+  bool parseBinary(const uint8_t* buf);
   PointcloudXYZIRADT convert(const int block_id);
 
   std::array<float, UNIT_NUM> elev_angle_;
