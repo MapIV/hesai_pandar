@@ -12,6 +12,7 @@
   <arg name="frame_id" default="pandar"/>
   <arg name="calibration"  default="$(find pandar_pointcloud)/config/128e4x.csv"/>
   <arg name="manager" default="pandar_nodelet_manager"/>
+  <arg name="use_variable_length_packet" default="true"/>
 
   <!-- nodelet manager -->
   <node pkg="nodelet" type="nodelet" name="$(arg manager)" args="manager" />
@@ -26,6 +27,7 @@
     <param name="scan_phase"  type="double" value="$(arg scan_phase)"/>
     <param name="model"  type="string" value="$(arg model)"/>
     <param name="frame_id"  type="string" value="$(arg frame_id)"/>
+    <param name="use_variable_length_packet"  type="bool" value="$(arg use_variable_length_packet)"/>
   </node>
 
   <!-- pandar cloud -->
@@ -39,5 +41,6 @@
     <param name="model" type="string" value="$(arg model)"/>
     <param name="device_ip" type="string" value="$(arg device_ip)"/>
     <param name="calibration" type="string" value="$(arg calibration)"/>
+    <param name="use_variable_length_packet"  type="bool" value="$(arg use_variable_length_packet)"/>
   </node>
 </launch>
