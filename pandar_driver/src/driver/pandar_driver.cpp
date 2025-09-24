@@ -4,6 +4,8 @@
 #include <pandar_driver/socket_input.h>
 #include <pandar_msgs/PandarPacket.h>
 #include <pandar_msgs/PandarScan.h>
+#include <pandar_msgs/PandarPacket2.h>
+#include <pandar_msgs/PandarScan2.h>
 
 using namespace pandar_driver;
 
@@ -16,8 +18,14 @@ PandarDriver::PandarDriver(ros::NodeHandle node, ros::NodeHandle private_nh)
   private_nh.getParam("scan_phase", scan_phase_);
   private_nh.getParam("model", model_);
   private_nh.getParam("frame_id", frame_id_);
+  use_variable_length_packet_ = private_nh.param<bool>("use_variable_length_packet", true);
 
-  pandar_packet_pub_ = node.advertise<pandar_msgs::PandarScan>("pandar_packets", 10);
+  if (use_variable_length_packet_) {
+    pandar_packet_pub_ = node.advertise<pandar_msgs::PandarScan2>("pandar_packets", 10);
+  }
+  else {
+    pandar_packet_pub_ = node.advertise<pandar_msgs::PandarScan>("pandar_packets", 10);
+  }
 
   if (!pcap_path_.empty()) {
     input_.reset(new PcapInput(lidar_port_, gps_port_, pcap_path_, model_));
@@ -66,34 +74,70 @@ bool PandarDriver::poll(void)
 {
   int scan_phase = static_cast<int>(scan_phase_ * 100.0);
 
-  pandar_msgs::PandarScanPtr scan(new pandar_msgs::PandarScan);
-  for (int prev_phase = 0;;) {  // finish scan
-    while (true) {              // until receive lidar packet
-      pandar_msgs::PandarPacket packet;
-      Input::PacketType packet_type = input_->getPacket(&packet);
-      if (packet_type == Input::PacketType::LIDAR && is_valid_packet_(packet.size)) {
-        scan->packets.push_back(packet);
+  if (use_variable_length_packet_)
+  {
+    pandar_msgs::PandarScan2Ptr scan(new pandar_msgs::PandarScan2);
+    for (int prev_phase = 0;;) {  // finish scan
+      while (true) {              // until receive lidar packet
+        pandar_msgs::PandarPacket2 packet;
+        Input::PacketType packet_type = input_->getPacket(&packet);
+        if (packet_type == Input::PacketType::LIDAR && is_valid_packet_(packet.size)) {
+          packet.data.resize(packet.size);
+          scan->packets.push_back(packet);
+          break;
+        }
+      }
+
+      int current_phase = 0;
+      {
+        const auto& data = scan->packets.back().data;
+        current_phase = (data[azimuth_index_] & 0xff) | ((data[azimuth_index_ + 1] & 0xff) << 8);
+        current_phase = (static_cast<int>(current_phase) + 36000 - scan_phase) % 36000;
+      }
+      if (current_phase >= prev_phase || scan->packets.size() < 2) {
+        prev_phase = current_phase;
+      }
+      else {
+        // has scanned !
         break;
       }
     }
 
-    int current_phase = 0;
-    {
-      const auto& data = scan->packets.back().data;
-      current_phase = (data[azimuth_index_] & 0xff) | ((data[azimuth_index_ + 1] & 0xff) << 8);
-      current_phase = (static_cast<int>(current_phase) + 36000 - scan_phase) % 36000;
-    }
-    if (current_phase >= prev_phase || scan->packets.size() < 2) {
-      prev_phase = current_phase;
-    }
-    else {
-      // has scanned !
-      break;
-    }
+    scan->header.stamp = scan->packets.front().stamp;
+    scan->header.frame_id = frame_id_;
+    pandar_packet_pub_.publish(scan);
   }
+  else
+  {
+    pandar_msgs::PandarScanPtr scan(new pandar_msgs::PandarScan);
+    for (int prev_phase = 0;;) {  // finish scan
+      while (true) {              // until receive lidar packet
+        pandar_msgs::PandarPacket packet;
+        Input::PacketType packet_type = input_->getPacket(&packet);
+        if (packet_type == Input::PacketType::LIDAR && is_valid_packet_(packet.size)) {
+          scan->packets.push_back(packet);
+          break;
+        }
+      }
 
-  scan->header.stamp = scan->packets.front().stamp;
-  scan->header.frame_id = frame_id_;
-  pandar_packet_pub_.publish(scan);
+      int current_phase = 0;
+      {
+        const auto& data = scan->packets.back().data;
+        current_phase = (data[azimuth_index_] & 0xff) | ((data[azimuth_index_ + 1] & 0xff) << 8);
+        current_phase = (static_cast<int>(current_phase) + 36000 - scan_phase) % 36000;
+      }
+      if (current_phase >= prev_phase || scan->packets.size() < 2) {
+        prev_phase = current_phase;
+      }
+      else {
+        // has scanned !
+        break;
+      }
+    }
+
+    scan->header.stamp = scan->packets.front().stamp;
+    scan->header.frame_id = frame_id_;
+    pandar_packet_pub_.publish(scan);
+  }
   return true;
 }

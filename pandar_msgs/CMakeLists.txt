@@ -12,6 +12,8 @@ add_message_files(
   FILES
     PandarPacket.msg
     PandarScan.msg
+    PandarPacket2.msg
+    PandarScan2.msg
 )
 
 generate_messages(

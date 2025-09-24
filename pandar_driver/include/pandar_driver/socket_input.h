@@ -14,6 +14,7 @@ public:
   SocketInput(const std::string& device_ip, uint16_t port, uint16_t gps_port, int timeout=1000);
   ~SocketInput();
   PacketType getPacket(pandar_msgs::PandarPacket* pkt) override;
+  PacketType getPacket(pandar_msgs::PandarPacket2* pkt) override;
 
 private:
   // void on_receive();

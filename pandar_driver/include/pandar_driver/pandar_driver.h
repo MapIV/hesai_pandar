@@ -23,6 +23,8 @@ private:
   std::string model_;
   std::string frame_id_;
   std::string pcap_path_;
+  
+  bool use_variable_length_packet_ = true;
 
   ros::Publisher pandar_packet_pub_;
   std::shared_ptr<Input> input_;

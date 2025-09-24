@@ -28,6 +28,7 @@ public:
   ~PcapInput();
 
   PacketType getPacket(pandar_msgs::PandarPacket* pandar_pkt) override;
+  PacketType getPacket(pandar_msgs::PandarPacket2* pandar_pkt) override;
 
 private:
   void initTimeIndexMap();

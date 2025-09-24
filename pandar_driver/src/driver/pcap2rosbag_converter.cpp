@@ -3,6 +3,8 @@
 
 #include <pandar_msgs/PandarPacket.h>
 #include <pandar_msgs/PandarScan.h>
+#include <pandar_msgs/PandarPacket2.h>
+#include <pandar_msgs/PandarScan2.h>
 #include <rosbag/bag.h>
 
 class PacketGenerator {
@@ -72,7 +74,7 @@ public:
 
         rosbag::Bag bag(output_bag_path_, rosbag::bagmode::Write);
         //bag.write("pandar_packets", ros::Time::now(), generator.pcap_pointer_);
-        pandar_msgs::PandarScanPtr pandar_scan_ptr(new pandar_msgs::PandarScan);
+        pandar_msgs::PandarScan2Ptr pandar_scan_ptr(new pandar_msgs::PandarScan2);
         pandar_scan_ptr->header.frame_id = "pandar";
         struct pcap_pkthdr pcap_header;
         const u_char* pcap_packet;
@@ -87,8 +89,9 @@ public:
             {
                 auto data_size = pcap_header.len - PKT_HEADER_SIZE;
                 if (is_valid_packet_(data_size)) {
-                    pandar_msgs::PandarPacket pandar_packet;
+                    pandar_msgs::PandarPacket2 pandar_packet;
                     pandar_packet.stamp = ros_time;
+                    pandar_packet.data.resize(data_size);
                     memcpy(&pandar_packet.data, (pcap_packet+PKT_HEADER_SIZE), data_size);
                     pandar_packet.size = data_size;
                     current_phase = (pandar_packet.data[azimuth_index_] & 0xff) | ((pandar_packet.data[azimuth_index_ + 1] & 0xff) << 8);

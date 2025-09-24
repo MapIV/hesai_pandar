@@ -140,3 +140,74 @@ PcapInput::PacketType PcapInput::getPacket(pandar_msgs::PandarPacket* pandar_pkt
     }
   }
 }
+
+PcapInput::PacketType PcapInput::getPacket(pandar_msgs::PandarPacket2* pandar_pkt)
+{
+  pcap_pkthdr* pkt_header;
+  const uint8_t* pkt_data;
+  int64_t current_time;
+  int64_t pkt_ts = 0;
+
+  while (true) {
+    if (pcap_next_ex(pcap_, &pkt_header, &pkt_data) >= 0) {
+      if (pcap_offline_filter(&pcap_filter_, pkt_header, pkt_data) == 0) {
+        continue;
+      }
+      const uint8_t* packet = pkt_data + PKT_HEADER_SIZE;
+      int pkt_size = pkt_header->len - PKT_HEADER_SIZE;
+      pandar_pkt->stamp = ros::Time::now();
+      pandar_pkt->size = pkt_size;
+      pandar_pkt->data.resize(pkt_size);
+      std::memcpy(&pandar_pkt->data[0], packet, pkt_size);
+
+      packet_count_++;
+      // Sleep
+      if (packet_count_ >= LIMIT_PACKET_NUM && utc_index_ != 0) {
+        packet_count_ = 0;
+
+        struct tm t;
+        t.tm_year = packet[utc_index_];
+        t.tm_mon = packet[utc_index_ + 1] - 1;
+        t.tm_mday = packet[utc_index_ + 2];
+        t.tm_hour = packet[utc_index_ + 3];
+        t.tm_min = packet[utc_index_ + 4];
+        t.tm_sec = packet[utc_index_ + 5];
+        t.tm_isdst = 0;
+
+        pkt_ts =
+            mktime(&t) * 1000000 + ((packet[ts_index_] & 0xff) | (packet[ts_index_ + 1] & 0xff) << 8 |
+                                    ((packet[ts_index_ + 2] & 0xff) << 16) | ((packet[ts_index_ + 3] & 0xff) << 24));
+        struct timeval sys_time;
+        gettimeofday(&sys_time, nullptr);
+        current_time = sys_time.tv_sec * 1000000 + sys_time.tv_usec;
+
+        if (0 == last_pkt_ts_) {
+          last_pkt_ts_ = pkt_ts;
+          last_time_ = current_time;
+        }
+        else {
+          int64_t sleep_time = (pkt_ts - last_pkt_ts_) - (current_time - last_time_);
+          if (sleep_time > 0) {
+            struct timeval waitTime;
+            waitTime.tv_sec = sleep_time / 1000000;
+            waitTime.tv_usec = sleep_time % 1000000;
+
+            int err;
+
+            do {
+              err = select(0, nullptr, nullptr, nullptr, &waitTime);
+            } while (err < 0 && errno != EINTR);
+          }
+
+          last_pkt_ts_ = pkt_ts;
+          last_time_ = current_time;
+          last_time_ += sleep_time;
+        }
+      }
+      return PacketType::LIDAR;
+    }
+    else {
+      return PacketType::ERROR;
+    }
+  }
+}
