@@ -4,6 +4,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## v2.4.0a
+
+### Added
+- データサイズ削減のためデータ型をPandarScan2に変更
+  - map4_engine v2.1.2 未満では使用不可のため注意のこと
+  - XT32M2Xでテスト済、他のモデルで使用する場合は十分注意のこと
+
+
+## v2.3.0
+
+### Changed
+- ros1ブランチにマージ
+
+
 ## v2.2.1
 
 ### Fixed
