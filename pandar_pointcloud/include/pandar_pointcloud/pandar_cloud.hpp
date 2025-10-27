@@ -25,6 +25,7 @@ private:
   void onProcessScan(const pandar_msgs::PandarScan::ConstPtr& msg);
   void onProcessScan2(const pandar_msgs::PandarScan2::ConstPtr& msg);
   pcl::PointCloud<PointXYZIR>::Ptr convertPointcloud(const pcl::PointCloud<PointXYZIRADT>::ConstPtr& input_pointcloud);
+  pcl::PointCloud<PointXYZIRADT>::Ptr convertPointcloudEx(const pcl::PointCloud<PointXYZIRADT>::ConstPtr& input_pointcloud);
 
   std::string model_;
   std::string return_mode_;

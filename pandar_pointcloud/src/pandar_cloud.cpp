@@ -234,9 +234,11 @@ void PandarCloud::onProcessScan(const pandar_msgs::PandarScan::ConstPtr& scan_ms
         pointcloud->header.frame_id = scan_msg->header.frame_id;
         pointcloud->height = 1;
 
-        pandar_points_ex_pub_.publish(pointcloud);
         if (pandar_points_pub_.getNumSubscribers() > 0) {
           pandar_points_pub_.publish(convertPointcloud(pointcloud));
+        }
+        if (pandar_points_ex_pub_.getNumSubscribers() > 0) {
+          pandar_points_ex_pub_.publish(convertPointcloudEx(pointcloud));
         }
       }
     }
@@ -258,10 +260,12 @@ void PandarCloud::onProcessScan2(const pandar_msgs::PandarScan2::ConstPtr& scan_
         pointcloud->header.stamp = pcl_conversions::toPCL(ros::Time(pointcloud->points[0].time_stamp));
         pointcloud->header.frame_id = scan_msg->header.frame_id;
         pointcloud->height = 1;
-
-        pandar_points_ex_pub_.publish(pointcloud);
+        
         if (pandar_points_pub_.getNumSubscribers() > 0) {
           pandar_points_pub_.publish(convertPointcloud(pointcloud));
+        }
+        if (pandar_points_ex_pub_.getNumSubscribers() > 0) {
+          pandar_points_ex_pub_.publish(convertPointcloudEx(pointcloud));
         }
       }
     }
@@ -280,6 +284,31 @@ PandarCloud::convertPointcloud(const pcl::PointCloud<PointXYZIRADT>::ConstPtr& i
     point.z = p.z;
     point.intensity = p.intensity;
     point.ring = p.ring;
+    output_pointcloud->points.push_back(point);
+  }
+
+  output_pointcloud->header = input_pointcloud->header;
+  output_pointcloud->height = 1;
+  output_pointcloud->width = output_pointcloud->points.size();
+  return output_pointcloud;
+}
+
+pcl::PointCloud<PointXYZIRADT>::Ptr
+PandarCloud::convertPointcloudEx(const pcl::PointCloud<PointXYZIRADT>::ConstPtr& input_pointcloud)
+{
+  pcl::PointCloud<PointXYZIRADT>::Ptr output_pointcloud(new pcl::PointCloud<PointXYZIRADT>);
+  output_pointcloud->reserve(input_pointcloud->points.size());
+  PointXYZIRADT point;
+  for (const auto& p : input_pointcloud->points) {
+    point.x = p.x;
+    point.y = p.y;
+    point.z = p.z;
+    point.intensity = p.intensity;
+    point.ring = p.ring;
+    point.azimuth = p.azimuth;
+    point.distance = p.distance;
+    point.return_type = p.return_type;
+    point.time_stamp = p.time_stamp;
     output_pointcloud->points.push_back(point);
   }
 
