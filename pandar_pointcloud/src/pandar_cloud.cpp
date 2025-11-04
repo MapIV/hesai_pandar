@@ -233,6 +233,7 @@ void PandarCloud::onProcessScan(const pandar_msgs::PandarScan::ConstPtr& scan_ms
         pointcloud->header.stamp = pcl_conversions::toPCL(ros::Time(pointcloud->points[0].time_stamp));
         pointcloud->header.frame_id = scan_msg->header.frame_id;
         pointcloud->height = 1;
+        pointcloud->width = pointcloud->points.size();
 
         pandar_points_ex_pub_.publish(pointcloud);
         if (pandar_points_pub_.getNumSubscribers() > 0) {
@@ -258,6 +259,7 @@ void PandarCloud::onProcessScan2(const pandar_msgs::PandarScan2::ConstPtr& scan_
         pointcloud->header.stamp = pcl_conversions::toPCL(ros::Time(pointcloud->points[0].time_stamp));
         pointcloud->header.frame_id = scan_msg->header.frame_id;
         pointcloud->height = 1;
+        pointcloud->width = pointcloud->points.size();
 
         pandar_points_ex_pub_.publish(pointcloud);
         if (pandar_points_pub_.getNumSubscribers() > 0) {
