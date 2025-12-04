@@ -14,11 +14,11 @@
   <arg name="manager" default="pandar_nodelet_manager"/>
 
   <!-- nodelet manager -->
-  <node pkg="nodelet" type="nodelet" name="$(arg manager)" args="manager" />
+  <node pkg="nodelet" type="nodelet" name="$(arg manager)" args="manager" required="true"/>
 
   <!-- pandar driver -->
   <node pkg="nodelet" type="nodelet" name="$(arg manager)_driver"
-        args="load pandar_driver/DriverNodelet $(arg manager)" if="$(arg launch_driver)">
+        args="load pandar_driver/DriverNodelet $(arg manager)" if="$(arg launch_driver)" required="true">
     <param name="pcap" type="string" value="$(arg pcap)"/>
     <param name="device_ip" type="string" value="$(arg device_ip)"/>
     <param name="lidar_port"  type="int" value="$(arg lidar_port)"/>
@@ -30,7 +30,7 @@
 
   <!-- pandar cloud -->
   <node pkg="nodelet" type="nodelet" name="$(arg manager)_cloud"
-        args="load pandar_pointcloud/CloudNodelet $(arg manager)">
+        args="load pandar_pointcloud/CloudNodelet $(arg manager)" required="true">
     <remap from="pandar_points" to="pointcloud_raw" />
     <remap from="pandar_points_ex" to="pointcloud_raw_ex" />
     <param name="scan_phase" type="double" value="$(arg scan_phase)"/>
