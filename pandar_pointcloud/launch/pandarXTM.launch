@@ -15,7 +15,9 @@
   <arg name="use_variable_length_packet" default="true"/>
 
   <!-- nodelet manager -->
-  <node pkg="nodelet" type="nodelet" name="$(arg manager)" args="manager" output="screen" required="true"/>
+  <node pkg="nodelet" type="nodelet" name="$(arg manager)" args="manager" output="screen" required="true">
+    <remap from="/lidar/0/pandar_packets" to="/lidar/0/pandar_packets_raw" />
+  </node>
 
   <!-- pandar driver -->
   <node pkg="nodelet" type="nodelet" name="$(arg manager)_driver"
