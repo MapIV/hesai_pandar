@@ -4,11 +4,25 @@
 #include "pandar_pointcloud/calibration.hpp"
 #include "packet_decoder.hpp"
 #include "pandar_xtm.hpp"
+#include "pandar_pointcloud/decoder/hesai_distance_correction.hpp"
 
 namespace pandar_pointcloud
 {
 namespace pandar_xtm
 {
+
+  // Ported from the batch pipeline (multi_lidar_controller/lidar_drivers/hesai) so the realtime
+  // decoder applies the same geometric distance correction the batch pipeline always had.
+  const hesai::OpticalCenter pandarXTM_optical_center{ -0.013f, 0.0305f, 0.0f };
+
+  // Per-channel firetime in microseconds, ported from the batch pipeline's
+  // pandarXTM_default_firetime (hesai_lidar/data/default_firetime.hpp).
+  const float pandarXTM_firetime[] = {
+    6.0f,    8.888f,  11.776f, 14.664f, 17.552f, 20.44f,  23.328f, 26.216f,
+    29.104f, 31.992f, 34.88f,  37.768f, 40.656f, 43.544f, 46.432f, 49.32f,
+    6.0f,    8.888f,  11.776f, 14.664f, 17.552f, 20.44f,  23.328f, 26.216f,
+    29.104f, 31.992f, 34.88f,  37.768f, 40.656f, 43.544f, 46.432f, 49.32f
+  };
 
   const float pandarXTM_elev_angle_map[] = {
     19.5f, 18.2f, 16.9f, 15.6f, 14.3f, 13.0f, 11.7f, 10.4f, \
@@ -126,6 +140,11 @@ private:
 
   std::vector<float> m_sin_azimuth_map_;
   std::vector<float> m_cos_azimuth_map_;
+
+  // Used for the ported distance-correction path (see CalcXTPointXYZIT); operates on fine angle
+  // units (1/25600 degree) as the batch pipeline does, independent of m_sin/cos_azimuth_map_'s
+  // coarser 0.01-degree table used for the uncorrected fast path.
+  hesai::AngleLookupTable angle_lut_;
 
   ReturnMode return_mode_;
   Packet packet_;

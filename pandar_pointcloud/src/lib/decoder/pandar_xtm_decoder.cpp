@@ -141,17 +141,33 @@ void PandarXTMDecoder::CalcXTPointXYZIT(int blockid, \
       continue;
     }
 
-    int azimuth = static_cast<int>(azimuth_offset_[i] * 100 + block->azimuth);
-    if(azimuth < 0)
-      azimuth += 36000;
-    if(azimuth >= 36000)
-      azimuth -= 36000;
-
+    // Ported from the batch pipeline's decodeChannelSDK (model_decoders.hpp): compute in fine
+    // angle units (1/25600 degree) so applyDistanceCorrection's ray-sphere intersection sees the
+    // same precision the batch pipeline uses, instead of this decoder's coarser 0.01-degree table.
     {
-      float xyDistance = unit.distance * m_cos_elevation_map_[i];
-      point.x = static_cast<float>(xyDistance * m_sin_azimuth_map_[azimuth]);
-      point.y = static_cast<float>(xyDistance * m_cos_azimuth_map_[azimuth]);
-      point.z = static_cast<float>(unit.distance * m_sin_elevation_map_[i]);
+      float distance = static_cast<float>(unit.distance);
+      int fine_azimuth = static_cast<int>(block->azimuth) * hesai::AngleLookupTable::FINE_RESOLUTION_INT;
+
+      const double firetime_deg = static_cast<double>(pandarXTM_firetime[i]) * packet_.motor_speed * 6e-6;
+      if (firetime_deg != 0.0)
+        fine_azimuth += static_cast<int>(firetime_deg * hesai::AngleLookupTable::ALL_FINE_RESOLUTION_INT + 0.0625);
+
+      int azimuth_coll = static_cast<int>(
+          azimuth_offset_[i] * hesai::AngleLookupTable::ALL_FINE_RESOLUTION_FLOAT + 0.0625f);
+      int elevation_corr = static_cast<int>(
+          elev_angle_[i] * hesai::AngleLookupTable::ALL_FINE_RESOLUTION_FLOAT + 0.0625f);
+
+      hesai::applyDistanceCorrection(pandarXTM_optical_center, angle_lut_, azimuth_coll, elevation_corr, distance);
+
+      fine_azimuth += azimuth_coll;
+      hesai::AngleLookupTable::circleRevise(fine_azimuth);
+      int elevation = elevation_corr;
+      hesai::AngleLookupTable::circleRevise(elevation);
+
+      float xyDistance = distance * angle_lut_.cos(elevation);
+      point.x = xyDistance * angle_lut_.sin(fine_azimuth);
+      point.y = xyDistance * angle_lut_.cos(fine_azimuth);
+      point.z = distance * angle_lut_.sin(elevation);
     }
 
     point.intensity = unit.intensity;
@@ -240,6 +256,8 @@ bool PandarXTMDecoder::parseBinary(const uint8_t* buf)
   packet_.return_mode = buf[index] & 0xff;
 
   index += RETURN_SIZE;
+
+  packet_.motor_speed = (buf[index] & 0xff) | ((buf[index + 1] & 0xff) << 8);
   index += ENGINE_VELOCITY;
 
   packet_.t.tm_year = (buf[index + 0] & 0xff) + 100;

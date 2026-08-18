@@ -77,6 +77,7 @@ struct Packet
   Block blocks[BLOCK_NUM];
   uint32_t usec;  // ms
   uint32_t return_mode;
+  uint16_t motor_speed;  // RPM, used for firetime azimuth compensation
   tm t;
 };
 }  // namespace pandar_qt
