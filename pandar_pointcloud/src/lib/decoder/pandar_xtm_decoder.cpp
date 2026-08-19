@@ -15,11 +15,16 @@ namespace pandar_xtm
 {
 PandarXTMDecoder::PandarXTMDecoder(Calibration& calibration, float scan_phase, double dual_return_distance_threshold, ReturnMode return_mode)
 {
+  for (size_t laser = 0; laser < UNIT_NUM; ++laser) {
+    elev_angle_[laser] = calibration.elev_angle_map[laser];
+    azimuth_offset_[laser] = calibration.azimuth_offset_map[laser];
+  }
+
   m_sin_elevation_map_.resize(UNIT_NUM);
   m_cos_elevation_map_.resize(UNIT_NUM);
   for (size_t laser = 0; laser < UNIT_NUM; ++laser) {
-    m_sin_elevation_map_[laser] = sinf(deg2rad(pandarXTM_elev_angle_map[laser]));
-    m_cos_elevation_map_[laser] = cosf(deg2rad(pandarXTM_elev_angle_map[laser]));
+    m_sin_elevation_map_[laser] = sinf(deg2rad(elev_angle_[laser]));
+    m_cos_elevation_map_[laser] = cosf(deg2rad(elev_angle_[laser]));
   }
   m_sin_azimuth_map_.resize(MAX_AZIMUTH_DEGREE_NUM);
   m_cos_azimuth_map_.resize(MAX_AZIMUTH_DEGREE_NUM);
@@ -136,7 +141,7 @@ void PandarXTMDecoder::CalcXTPointXYZIT(int blockid, \
       continue;
     }
 
-    int azimuth = static_cast<int>(pandarXTM_horizontal_azimuth_offset_map[i] * 100 + block->azimuth);
+    int azimuth = static_cast<int>(azimuth_offset_[i] * 100 + block->azimuth);
     if(azimuth < 0)
       azimuth += 36000;
     if(azimuth >= 36000)
@@ -153,7 +158,7 @@ void PandarXTMDecoder::CalcXTPointXYZIT(int blockid, \
 
     double unix_second = static_cast<double>(timegm(&packet_.t));  // sensor-time (ppt/gps)
     point.time_stamp = unix_second + (static_cast<double>(packet_.usec)) / 1000000.0;
-    point.time_stamp += (static_cast<double>(blockXTMOffsetSingle[i] + laserXTMOffset[i]) / 1000000.0f);
+    point.time_stamp += (static_cast<double>(blockXTMOffsetSingle[blockid] + laserXTMOffset[i]) / 1000000.0f);
 
     if (packet_.return_mode == 0x3d){
       point.time_stamp =
