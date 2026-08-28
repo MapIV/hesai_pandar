@@ -21,6 +21,7 @@ ament_auto_add_library(pandar_cloud SHARED
   src/lib/calibration.cpp
   src/lib/decoder/pandar40_decoder.cpp
   src/lib/decoder/pandar_qt_decoder.cpp
+  src/lib/decoder/pandar_qt128_decoder.cpp
   src/lib/decoder/pandar_xt32_decoder.cpp
   src/lib/decoder/pandar_xt16_decoder.cpp
   src/lib/decoder/pandar64_decoder.cpp

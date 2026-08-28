@@ -3,6 +3,7 @@
 #include "pandar_pointcloud/calibration.hpp"
 #include "pandar_pointcloud/decoder/pandar40_decoder.hpp"
 #include "pandar_pointcloud/decoder/pandar_qt_decoder.hpp"
+#include "pandar_pointcloud/decoder/pandar_qt128_decoder.hpp"
 #include "pandar_pointcloud/decoder/pandar_xt32_decoder.hpp"
 #include "pandar_pointcloud/decoder/pandar_xt16_decoder.hpp"
 #include "pandar_pointcloud/decoder/pandar64_decoder.hpp"
@@ -95,6 +96,23 @@ PandarCloud::PandarCloud(const rclcpp::NodeOptions & options)
                                                             dual_return_distance_threshold_,
                                                             selected_return_mode,
                                                             disabled_rings);
+  }
+  else if (model_ == "PandarQT128") {
+    pandar_qt128::PandarQT128Decoder::ReturnMode selected_return_mode;
+    if (return_mode_ == "First")
+      selected_return_mode = pandar_qt128::PandarQT128Decoder::ReturnMode::FIRST;
+    else if (return_mode_ == "Last")
+      selected_return_mode = pandar_qt128::PandarQT128Decoder::ReturnMode::LAST;
+    else if (return_mode_ == "Dual")
+      selected_return_mode = pandar_qt128::PandarQT128Decoder::ReturnMode::DUAL;
+    else {
+      RCLCPP_WARN(get_logger(),"Invalid return mode, defaulting to dual return mode");
+      selected_return_mode = pandar_qt128::PandarQT128Decoder::ReturnMode::DUAL;
+    }
+    decoder_ = std::make_shared<pandar_qt128::PandarQT128Decoder>(*this, calibration_, scan_phase_,
+                                                            distance_range_,
+                                                            dual_return_distance_threshold_,
+                                                            selected_return_mode);
   }
   else if (model_ == "PandarXT-32") {
     pandar_xt32::PandarXT32Decoder::ReturnMode selected_return_mode;

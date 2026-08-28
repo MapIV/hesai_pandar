@@ -49,6 +49,10 @@ PandarDriverCore::PandarDriverCore(rclcpp::Node *node)
     azimuth_index_ = 12;  // 12 + 258 * [0-3]
     is_valid_packet_ = [](size_t packet_size) { return (packet_size == 1072); };
   }
+  else if (model_ == "PandarQT128") {
+    azimuth_index_ = 12;  // 12 + 512 * [0-1]
+    is_valid_packet_ = [](size_t packet_size) { return (packet_size == 1127); };
+  }
   else  if (model_ == "PandarXT-32") {
     azimuth_index_ = 12;  // 12 + 130 * [0-7]
     is_valid_packet_ = [](size_t packet_size) { return (packet_size == 1080); };
