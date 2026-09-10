@@ -64,7 +64,7 @@ public:
   ReturnCode getPTPDiagnostics(PTPDiag& diag);
 
 private:
-  boost::asio::io_service io_service_;
+  boost::asio::io_context io_service_;
   boost::asio::ip::tcp::socket socket_;
   boost::asio::ip::address device_ip_;
   boost::asio::steady_timer timer_;

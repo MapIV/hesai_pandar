@@ -10,13 +10,13 @@ const size_t ETHERNET_MTU = 1500;
 SocketInput::SocketInput(rclcpp::Node * node, const std::string& device_ip, uint16_t port, uint16_t gps_port, int timeout)
 : clock_(node->get_clock()), logger_(node->get_logger()), io_service_()
 {
-  device_ip_ = boost::asio::ip::address::from_string(device_ip);
+  device_ip_ = boost::asio::ip::make_address(device_ip);
   timeout_ = timeout;
 
   lidar_socket_ = std::make_unique<udp::socket>(io_service_, udp::endpoint(udp::v4(), port));
   gps_socket_ = std::make_unique<udp::socket>(io_service_, udp::endpoint(udp::v4(), gps_port));
-  deadline_ = std::make_unique<boost::asio::deadline_timer>(io_service_);
-  deadline_->expires_at(boost::posix_time::pos_infin);
+  deadline_ = std::make_unique<boost::asio::steady_timer>(io_service_);
+  deadline_->expires_at(boost::asio::steady_timer::time_point::max());
   checkDeadline();
 }
 
@@ -27,7 +27,7 @@ SocketInput::~SocketInput(void)
 
 SocketInput::PacketType SocketInput::getPacket(pandar_msgs::msg::PandarPacket* pkt)
 {
-  deadline_->expires_from_now(boost::posix_time::milliseconds(timeout_));
+  deadline_->expires_after(std::chrono::milliseconds(timeout_));
 
   boost::system::error_code error_code = boost::asio::error::would_block;
   udp::endpoint remote_endpoint{};
@@ -54,10 +54,10 @@ SocketInput::PacketType SocketInput::getPacket(pandar_msgs::msg::PandarPacket* p
 
 void SocketInput::checkDeadline()
 {
-  if (deadline_->expires_at() <= boost::asio::deadline_timer::traits_type::now())
+  if (deadline_->expiry() <= std::chrono::steady_clock::now())
   {
     lidar_socket_->cancel();
-    deadline_->expires_at(boost::posix_time::pos_infin);
+    deadline_->expires_at(boost::asio::steady_timer::time_point::max());
   }
   deadline_->async_wait(std::bind(&SocketInput::checkDeadline, this));
 }

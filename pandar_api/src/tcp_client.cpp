@@ -1,7 +1,8 @@
 #include <string>
 #include <iostream>
 #include <cstdint>
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
+using namespace boost::placeholders;
 
 #include "pandar_api/tcp_client.hpp"
 
@@ -31,7 +32,7 @@ TCPClient::TCPClient(const std::string& device_ip, int32_t timeout)
     return_code_(ReturnCode::SUCCESS),
     timeout_(timeout)
 {
-  device_ip_ = boost::asio::ip::address::from_string(device_ip);
+  device_ip_ = boost::asio::ip::make_address(device_ip);
 }
 
 
@@ -192,12 +193,12 @@ TCPClient::ReturnCode TCPClient::getPTPDiagnostics(PTPDiag& diag)
 
 void TCPClient::connect()
 {
-  io_service_.reset();
+  io_service_.restart();
   socket_.async_connect(
     boost::asio::ip::tcp::endpoint(device_ip_, API_PORT),
     boost::bind(&TCPClient::on_connect, this, boost::asio::placeholders::error));
 
-  timer_.expires_from_now(std::chrono::milliseconds(timeout_));
+  timer_.expires_after(std::chrono::milliseconds(timeout_));
   timer_.async_wait(boost::bind(&TCPClient::on_timer, this, boost::placeholders::_1));
   io_service_.run();
 }

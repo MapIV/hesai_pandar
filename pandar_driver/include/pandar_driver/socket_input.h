@@ -22,10 +22,10 @@ private:
   rclcpp::Clock::SharedPtr clock_;
   rclcpp::Logger logger_;
 
-  boost::asio::io_service io_service_;
+  boost::asio::io_context io_service_;
   std::unique_ptr<udp::socket> lidar_socket_;
   std::unique_ptr<udp::socket> gps_socket_;
-  std::unique_ptr<boost::asio::deadline_timer> deadline_;
+  std::unique_ptr<boost::asio::steady_timer> deadline_;
 
   boost::asio::ip::address device_ip_;
   int timeout_;
